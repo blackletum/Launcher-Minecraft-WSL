@@ -1,3 +1,7 @@
+<h1>CHECK THE "BUILD/MINECRAFT" FOLDER FOR A WSL-READY BUILD, FCK YOUR LINUX ELITISM, GO TOUCH GRASS</h1>
+
+___________________________________________________________________________________________________________________________________
+
 <p align="center">
   <img src="https://avatars2.githubusercontent.com/u/5411890" alt="MultiMC logo"/>
 </p>
