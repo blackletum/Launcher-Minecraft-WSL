@@ -1,4 +1,5 @@
 <h1>CHECK THE "BUILD/MINECRAFT" FOLDER FOR A WSL-READY BUILD, FCK YOUR LINUX ELITISM, GO TOUCH GRASS</h1>
+only works with 6 cores I think though bc that's what I built it for
 
 ___________________________________________________________________________________________________________________________________
 
