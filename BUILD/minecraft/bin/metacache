@@ -1,0 +1,21 @@
+{
+    "entries": [
+        {
+            "base": "meta",
+            "etag": "W/\"6740b964-4e73f\"",
+            "last_changed_timestamp": 1732860916005,
+            "md5sum": "39de30043f5dea4a3312fe456df9bdca",
+            "path": "net.minecraft/index.json",
+            "remote_changed_timestamp": "Fri, 22 Nov 2024 17:03:32 GMT"
+        },
+        {
+            "base": "translations",
+            "etag": "W/\"65bbd61d-3e2a\"",
+            "last_changed_timestamp": 1732860910255,
+            "md5sum": "78e5bfefc547cc05a3a79e738310c4be",
+            "path": "index_v2.json",
+            "remote_changed_timestamp": "Thu, 01 Feb 2024 17:34:21 GMT"
+        }
+    ],
+    "version": "1"
+}

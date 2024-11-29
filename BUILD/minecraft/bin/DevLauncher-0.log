@@ -1,0 +1,135 @@
+    0.001 D <> Log initialized.
+    0.001 D "DevLauncher 5" , (c) 2013-2023  "MultiMC Contributors"
+    0.001 D Version                    :  "0.7.0-custom"
+    0.001 D Git commit                 :  "bae1ecfea13bfe0007b00dd0608df423e2c0b498"
+    0.001 D Git refspec                :  "refs/heads/develop"
+    0.001 D Work dir before adjustment :  "/home/dan/minecraft/bin"
+    0.001 D Work dir after adjustment  :  "/home/dan/minecraft/bin"
+    0.001 D Adjusted by                :  "Fallback to binary path /home/dan/minecraft/bin"
+    0.001 D Binary path                :  "/home/dan/minecraft/bin"
+    0.001 D Application root path      :  "/home/dan/minecraft"
+    0.001 D <> Paths set.
+    0.004 D Detected default console font: "DejaVu Sans Mono" , substitutions: ""
+    0.005 D <> Settings loaded.
+    0.006 D Detecting proxy settings...
+    0.006 D Using no proxy is an option!
+    0.006 D <> Network done.
+    0.007 D Your language is "en_US"
+    0.007 D <> Translations loaded.
+    0.007 D Started watching  "/home/dan/minecraft/bin/icons"
+    0.008 D <> Instance icons intialized.
+    0.008 D <> Icon themes initialized.
+    0.008 D Determining System Theme...
+    0.008 D System theme seems to be: "fusion"
+    0.008 D Considering theme from theme factory: "windows"
+    0.008 D Considering theme from theme factory: "fusion"
+    0.008 D System theme has been determined to be: "Fusion"
+    0.008 D Loading theme "custom"
+    0.008 D <> Widget themes initialized.
+    0.008 D Instance path              :  "instances"
+    0.008 D Loading Instances...
+    0.008 D Discovering instances in "/home/dan/minecraft/bin/instances"
+    0.008 D <> Instances loaded.
+    0.008 D Loading accounts...
+    0.008 C "Failed to read the account list file (accounts.json)."
+    0.008 D <> Accounts loaded.
+    0.008 D <> Cache initialized.
+    0.008 D Downloading Translations Index...
+    0.009 D Task "NetJob(Translations Index)" starting for the first time
+    0.115 D <> Icon theme set.
+    0.115 D <> Application theme set.
+    0.122 D Task "JavaListLoadTask(0x55a4f6d3a800)" starting for the first time
+    0.122 D Linux Java detection incomplete - defaulting to "java"
+    0.122 D Probing the following Java paths: 
+    0.122 D   "java"
+    0.122 D   "/usr/lib/jvm/java-11-openjdk-amd64/jre/bin/java"
+    0.122 D   "/usr/lib/jvm/java-11-openjdk-amd64/bin/java"
+    0.122 D Task "JavaCheckerJob(0x55a4f6d3af60)" starting for the first time
+    0.122 D "Java detection"  started.
+    0.122 D "Running java checker: java-jar /home/dan/minecraft/bin/jars/JavaCheck.jar"
+    0.123 D "Running java checker: /usr/lib/jvm/java-11-openjdk-amd64/jre/bin/java-jar /home/dan/minecraft/bin/jars/JavaCheck.jar"
+    0.123 D "Running java checker: /usr/lib/jvm/java-11-openjdk-amd64/bin/java-jar /home/dan/minecraft/bin/jars/JavaCheck.jar"
+    1.258 D Downloading  "https://files.multimc.org/translations/index_v2.json"
+    1.272 D STDOUT "os.arch=amd64\njava.version=11.0.25\njava.vendor=Ubuntu\n"
+    1.272 W STDERR ""
+    1.272 D Java checker finished with status  QProcess::NormalExit  exit code  0
+    1.272 D Java checker succeeded.
+    1.272 D "Java detection" progress: 1 / 3
+    1.272 D Java checker has failed to start.
+    1.272 D Process environment:
+    1.272 D ("DISPLAY=:0", "HOME=/home/dan", "HOSTTYPE=x86_64", "LANG=C.UTF-8", "LD_LIBRARY_PATH=", "LESSCLOSE=/usr/bin/lesspipe %s %s", "LESSOPEN=| /usr/bin/lesspipe %s", "LOGNAME=dan", "LS_COLORS=rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:", "MOTD_SHOWN=update-motd", "NAME=Dan-MainDesktop", "OLDPWD=/home/dan/minecraft", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Program Files/Eclipse Adoptium/jdk-17.0.11.9-hotspot/bin:/mnt/c/Program Files/Oculus/Support/oculus-runtime:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/java8path:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/javapath:/mnt/c/Program Files/Microsoft MPI/Bin/:/mnt/c/Program Files (x86)/Python/Python310/Scripts/:/mnt/c/Program Files (x86)/Python/Python310/:/mnt/c/Windows/system32:/mnt/c/Windows:/mnt/c/Windows/System32/Wbem:/mnt/c/Windows/System32/WindowsPowerShell/v1.0/:/mnt/c/Windows/System32/OpenSSH/:/mnt/c/Program Files/NVIDIA Corporation/NVIDIA NvDLISR:/mnt/c/Program Files (x86)/NVIDIA Corporation/PhysX/Common:/mnt/c/WINDOWS/system32:/mnt/c/WINDOWS:/mnt/c/WINDOWS/System32/Wbem:/mnt/c/WINDOWS/System32/WindowsPowerShell/v1.0/:/mnt/c/WINDOWS/System32/OpenSSH/:/mnt/c/Program Files/Microsoft SQL Server/110/Tools/Binn/:/mnt/c/Program Files/dotnet/:/mnt/c/Program Files/Microsoft SQL Server/120/Tools/Binn/:/mnt/c/Users/Dan/.dnx/bin:/mnt/c/Program Files/Microsoft DNX/Dnvm/:/mnt/c/Program Files/Microsoft SQL Server/130/Tools/Binn/:/mnt/c/ProgramData/chocolatey/bin:/mnt/c/Program Files (x86)/Microsoft SDKs/TypeScript/1.0/:/mnt/d/NVIDIA_ChatWithRTX_Demo/env_nvd_rag/Lib/site-packages/torch/lib:/mnt/c/Users/Dan/AppData/Local/NVIDIA/ChatWithRTX/env_nvd_rag/Lib/site-packages/torch/lib:/mnt/c/Program Files/Git LFS:/mnt/c/Program Files/Git/cmd:/mnt/c/Program Files/PuTTY/:/mnt/c/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/:/mnt/c/Users/Dan/AppData/Local/Programs/Python/Python310/Scripts/:/mnt/c/Users/Dan/AppData/Local/Programs/Python/Python310/:/mnt/c/Users/Dan/AppData/Local/Microsoft/WindowsApps:/mnt/c/Users/Dan/AppData/Local/GitHubDesktop/bin:/snap/bin", "PULSE_SERVER=/mnt/wslg/PulseServer", "PWD=/home/dan/minecraft/bin", "SHELL=/bin/bash", "SHLVL=1", "TERM=xterm-256color", "USER=dan", "WAYLAND_DISPLAY=wayland-0", "WSLENV=", "WSL_DISTRO_NAME=Ubuntu-22.04", "WSL_INTEROP=/run/WSL/8_interop", "XDG_DATA_DIRS=/usr/local/share:/usr/share:/var/lib/snapd/desktop", "XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir", "_=./DevLauncher")
+    1.272 D Native environment:
+    1.272 D ("DISPLAY=:0", "HOME=/home/dan", "HOSTTYPE=x86_64", "LANG=C.UTF-8", "LESSCLOSE=/usr/bin/lesspipe %s %s", "LESSOPEN=| /usr/bin/lesspipe %s", "LOGNAME=dan", "LS_COLORS=rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:", "MOTD_SHOWN=update-motd", "NAME=Dan-MainDesktop", "OLDPWD=/home/dan/minecraft", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Program Files/Eclipse Adoptium/jdk-17.0.11.9-hotspot/bin:/mnt/c/Program Files/Oculus/Support/oculus-runtime:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/java8path:/mnt/c/Program Files (x86)/Common Files/Oracle/Java/javapath:/mnt/c/Program Files/Microsoft MPI/Bin/:/mnt/c/Program Files (x86)/Python/Python310/Scripts/:/mnt/c/Program Files (x86)/Python/Python310/:/mnt/c/Windows/system32:/mnt/c/Windows:/mnt/c/Windows/System32/Wbem:/mnt/c/Windows/System32/WindowsPowerShell/v1.0/:/mnt/c/Windows/System32/OpenSSH/:/mnt/c/Program Files/NVIDIA Corporation/NVIDIA NvDLISR:/mnt/c/Program Files (x86)/NVIDIA Corporation/PhysX/Common:/mnt/c/WINDOWS/system32:/mnt/c/WINDOWS:/mnt/c/WINDOWS/System32/Wbem:/mnt/c/WINDOWS/System32/WindowsPowerShell/v1.0/:/mnt/c/WINDOWS/System32/OpenSSH/:/mnt/c/Program Files/Microsoft SQL Server/110/Tools/Binn/:/mnt/c/Program Files/dotnet/:/mnt/c/Program Files/Microsoft SQL Server/120/Tools/Binn/:/mnt/c/Users/Dan/.dnx/bin:/mnt/c/Program Files/Microsoft DNX/Dnvm/:/mnt/c/Program Files/Microsoft SQL Server/130/Tools/Binn/:/mnt/c/ProgramData/chocolatey/bin:/mnt/c/Program Files (x86)/Microsoft SDKs/TypeScript/1.0/:/mnt/d/NVIDIA_ChatWithRTX_Demo/env_nvd_rag/Lib/site-packages/torch/lib:/mnt/c/Users/Dan/AppData/Local/NVIDIA/ChatWithRTX/env_nvd_rag/Lib/site-packages/torch/lib:/mnt/c/Program Files/Git LFS:/mnt/c/Program Files/Git/cmd:/mnt/c/Program Files/PuTTY/:/mnt/c/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/:/mnt/c/Users/Dan/AppData/Local/Programs/Python/Python310/Scripts/:/mnt/c/Users/Dan/AppData/Local/Programs/Python/Python310/:/mnt/c/Users/Dan/AppData/Local/Microsoft/WindowsApps:/mnt/c/Users/Dan/AppData/Local/GitHubDesktop/bin:/snap/bin", "PULSE_SERVER=/mnt/wslg/PulseServer", "PWD=/home/dan/minecraft/bin", "SHELL=/bin/bash", "SHLVL=1", "TERM=xterm-256color", "USER=dan", "WAYLAND_DISPLAY=wayland-0", "WSLENV=", "WSL_DISTRO_NAME=Ubuntu-22.04", "WSL_INTEROP=/run/WSL/8_interop", "XDG_DATA_DIRS=/usr/local/share:/usr/share:/var/lib/snapd/desktop", "XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir", "_=./DevLauncher")
+    1.272 D "Java detection" progress: 2 / 3
+    1.279 D Dir changed: "/home/dan/minecraft/bin/translations"
+    1.280 D STDOUT "os.arch=amd64\njava.version=11.0.25\njava.vendor=Ubuntu\n"
+    1.280 W STDERR ""
+    1.280 D Java checker finished with status  QProcess::NormalExit  exit code  0
+    1.280 D Java checker succeeded.
+    1.280 D "Java detection" progress: 3 / 3
+    1.281 D Task "JavaCheckerJob(0x55a4f6d3af60)" succeeded
+    1.281 D Found the following valid Java installations:
+    1.281 D   "11.0.25" "64" "java"
+    1.281 D   "11.0.25" "64" "/usr/lib/jvm/java-11-openjdk-amd64/bin/java"
+    1.281 D Task "JavaListLoadTask(0x55a4f6d3a800)" succeeded
+    1.282 D "Running java checker: java-Xms512m -Xmx1024m -jar /home/dan/minecraft/bin/jars/JavaCheck.jar"
+    1.317 D STDOUT "os.arch=amd64\njava.version=11.0.25\njava.vendor=Ubuntu\n"
+    1.317 W STDERR ""
+    1.318 D Java checker finished with status  QProcess::NormalExit  exit code  0
+    1.318 D Java checker succeeded.
+    1.746 D Download succeeded: "https://files.multimc.org/translations/index_v2.json"
+    1.746 D Task "NetJob(Translations Index)" succeeded
+    1.746 D Got translations index!
+    1.746 D Dir changed: "/home/dan/minecraft/bin/translations"
+    5.043 D Wizard result = 1
+    5.050 W QMetaObject::connectSlotsByName: No matching signal for on_actionREDDIT_triggered()
+    5.050 W QMetaObject::connectSlotsByName: No matching signal for on_actionDISCORD_triggered()
+    5.050 W QMetaObject::connectSlotsByName: No matching signal for on_actionViewSelectedModsFolder_triggered()
+    5.051 W QMetaObject::connectSlotsByName: No matching signal for on_actionInstanceSettings_triggered()
+    5.051 W QMetaObject::connectSlotsByName: No matching signal for on_actionReportBug_triggered()
+    5.052 D Reloading news.
+    5.052 D Task "NetJob(News RSS Feed)" starting for the first time
+    5.052 C Failed to check for notifications. No notifications URL set. If you'd like to use MultiMC's notification system, please pass the URL to CMake at compile time.
+    5.057 D <> Main window shown.
+    5.057 D Downloading  "https://multimc.org/rss.xml"
+    5.557 D Download succeeded: "https://multimc.org/rss.xml"
+    5.557 D Task "NetJob(News RSS Feed)" succeeded
+    5.557 D Finished loading RSS feed.
+    5.558 D Loaded news entry "0.7.0 - The forever develop release"
+    5.558 D Loaded news entry "0.6.16 - The Modpack Apocalypse"
+    5.558 D Loaded news entry "Migration to Microsoft account is required"
+    5.558 D Loaded news entry "IMPORTANT MESSAGE - Security vulnerability in Minecraft"
+    5.558 D Loaded news entry "0.6.14 - Microsoft account refinement, Forge 1.17+ and other fixes"
+    5.558 D Loaded news entry "0.6.13 - Microsoft account integration"
+    5.558 D Loaded news entry "0.6.12 - Spring cleaning and modpack platforms"
+    5.558 D Loaded news entry "About Microsoft accounts"
+    5.558 D Loaded news entry "0.6.7 - UI fixes and important metadata news - update required!"
+    5.558 D Loaded news entry "0.6.5 - translation UI and legacy sound fixes"
+    5.558 D Loaded news entry "0.6.4 - better translation workflow and new FTB API location"
+    5.558 D Loaded news entry "0.6.3 - The Big Sync"
+    5.559 D Loaded news entry "0.6.2 Released!"
+    5.559 D Loaded news entry "0.6.1 Released!"
+    5.559 D Loaded news entry "0.6.0 Released!"
+    5.559 D Loaded news entry "Introducing the Archive"
+    5.559 D Loaded news entry "0.5.1 - Bugfixes."
+    5.559 D Loaded news entry "0.5.0 - Running multiple instances at the same time!"
+    5.559 D Loaded news entry "0.4.11 - OSX 10.7 fix and workaround for Minecraft 1.9 compatibility"
+    5.559 D Loaded news entry "0.4.10 - Another wifi fix"
+    5.559 D Loaded news entry "0.4.9 - the Windows wifi fix."
+    5.559 D Loaded news entry "0.4.8 - Worlds and more."
+    5.559 D Loaded news entry "0.4.7 - What 0.4.6 should have been."
+    5.559 D Loaded news entry "0.4.6 - Bug fixes and improvements!"
+    5.559 D Loaded news entry "0.4.5 - Translations, Themes, and Technic"
+    5.559 D Loaded news entry "0.4 out - Jar mods, UI changes, and more!"
+    5.559 D Loaded news entry "Introducing QuickMods - A better way to install mods"
+    5.559 D Loaded news entry "Support us on Patreon!"
+    5.559 D Loaded news entry "Heartbleed Vulnerability Update (fixed!)"
+    5.559 D Loaded news entry "Announcing MultiMC 6"
+    5.559 D Loaded news entry "0.3 - The big feature update."
+    5.560 D Loaded news entry "First official MultiMC 5 release!"
+    5.560 D Loaded news entry "MultiMC Status Update"
+    5.560 D News loading succeeded.
+    6.746 D Task "NetJob(Download of meta file net.minecraft/index.json)" starting for the first time
+    6.754 D Downloading  "https://meta.multimc.org/v1/net.minecraft/index.json"
+    7.506 D Download succeeded: "https://meta.multimc.org/v1/net.minecraft/index.json"
+    7.506 D Task "NetJob(Download of meta file net.minecraft/index.json)" succeeded
