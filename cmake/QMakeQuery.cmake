@@ -5,10 +5,20 @@ set(__QMAKEQUERY_CMAKE__ TRUE)
 
 get_target_property(QMAKE_EXECUTABLE Qt5::qmake LOCATION)
 
-function(QUERY_QMAKE VAR RESULT)
-    exec_program(${QMAKE_EXECUTABLE} ARGS "-query ${VAR}" RETURN_VALUE return_code OUTPUT_VARIABLE output )
+function(QUERY_QMAKE)
+    set(options "")
+    set(oneValueArgs QUERY RESULT)
+    set(multiValueArgs )
+
+    cmake_parse_arguments(OPT "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
+
+    execute_process(COMMAND "${QMAKE_EXECUTABLE}" "-query" "${OPT_QUERY}" RESULT_VARIABLE return_code OUTPUT_VARIABLE output )
     if(NOT return_code)
+        string(STRIP "${output}" output)
         file(TO_CMAKE_PATH "${output}" output)
-        set(${RESULT} ${output} PARENT_SCOPE)
+        set(${OPT_RESULT} ${output} PARENT_SCOPE)
+        message(STATUS "QUERY_QMAKE(${OPT_VARIABLE}): SUCCEEDED - ${output}")
+    else()
+        message(STATUS "QUERY_QMAKE(${OPT_VARIABLE}): FAILED - ${return_code}")
     endif(NOT return_code)
 endfunction(QUERY_QMAKE)

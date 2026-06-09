@@ -2,37 +2,42 @@
 
 #include "BaseVersion.h"
 #include "JavaVersion.h"
+#include <sys.h>
 
 struct JavaInstall : public BaseVersion
 {
     JavaInstall(){}
-    JavaInstall(QString id, QString arch, QString path)
+    JavaInstall(const QString& id, const Sys::Architecture& arch, const QString& path)
     : id(id), arch(arch), path(path)
     {
     }
-    virtual QString descriptor()
+    virtual QString descriptor() const
     {
         return id.toString();
     }
 
-    virtual QString name()
+    virtual QString name() const
     {
         return id.toString();
     }
 
     virtual QString typeString() const
     {
-        return arch;
+        return arch.serialize();
     }
 
-    bool operator<(const JavaInstall & rhs);
-    bool operator==(const JavaInstall & rhs);
-    bool operator>(const JavaInstall & rhs);
+    bool operator<(const JavaInstall & rhs) const;
+    bool operator==(const JavaInstall & rhs) const;
+    bool operator>(const JavaInstall & rhs) const;
 
     JavaVersion id;
-    QString arch;
+    Sys::Architecture arch;
     QString path;
     bool recommended = false;
+
+private:
+    using BaseVersion::operator<;
+    using BaseVersion::operator>;
 };
 
 typedef std::shared_ptr<JavaInstall> JavaInstallPtr;

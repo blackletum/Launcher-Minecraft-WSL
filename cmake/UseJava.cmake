@@ -192,6 +192,7 @@
 
 function (__java_copy_file src dest comment)
     add_custom_command(
+        POST_BUILD
         OUTPUT  ${dest}
         COMMAND cmake -E copy_if_different
         ARGS    ${src}
@@ -334,6 +335,7 @@ function(add_jar _TARGET_NAME)
       ${CMAKE_JAVA_TARGET_OUTPUT_DIR}/${_JAVA_TARGET_OUTPUT_NAME})
     if (CMAKE_JNI_TARGET)
         add_custom_command(
+            POST_BUILD
             OUTPUT ${_JAVA_JAR_OUTPUT_PATH}
             COMMAND ${Java_JAR_EXECUTABLE}
                 -cf${_ENTRY_POINT_OPTION} ${_JAVA_JAR_OUTPUT_PATH} ${_ENTRY_POINT_VALUE}

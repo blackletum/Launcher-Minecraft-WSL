@@ -1,11 +1,16 @@
 #include "JavaInstall.h"
 #include <MMCStrings.h>
 
-bool JavaInstall::operator<(const JavaInstall &rhs)
+bool JavaInstall::operator<(const JavaInstall &rhs) const
 {
-    auto archCompare = Strings::naturalCompare(arch, rhs.arch, Qt::CaseInsensitive);
-    if(archCompare != 0)
-        return archCompare < 0;
+    if(arch < rhs.arch)
+    {
+        return true;
+    }
+    if(arch > rhs.arch)
+    {
+        return false;
+    }
     if(id < rhs.id)
     {
         return true;
@@ -17,12 +22,12 @@ bool JavaInstall::operator<(const JavaInstall &rhs)
     return Strings::naturalCompare(path, rhs.path, Qt::CaseInsensitive) < 0;
 }
 
-bool JavaInstall::operator==(const JavaInstall &rhs)
+bool JavaInstall::operator==(const JavaInstall &rhs) const
 {
     return arch == rhs.arch && id == rhs.id && path == rhs.path;
 }
 
-bool JavaInstall::operator>(const JavaInstall &rhs)
+bool JavaInstall::operator>(const JavaInstall &rhs) const
 {
     return (!operator<(rhs)) && (!operator==(rhs));
 }

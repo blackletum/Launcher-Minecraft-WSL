@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.10)
 
 if(WIN32)
     # In Qt 5.1+ we have our own main() function, don't autolink to qtmain on Windows
@@ -68,6 +68,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DQT_NO_DEPRECATED_WARNINGS=Y")
 ##################################### Set Application options #####################################
 
 ######## Set URLs ########
+set(Launcher_NEWS_URL "https://multimc.org/posts.html" CACHE STRING "URL to open Launcher's news.")
 set(Launcher_NEWS_RSS_URL "https://multimc.org/rss.xml" CACHE STRING "URL to fetch Launcher's news RSS feed from.")
 
 ######## Set version numbers ########
@@ -86,30 +87,6 @@ set(Launcher_UPDATER_BASE "" CACHE STRING "Base URL for the updater.")
 
 # Notification URL
 set(Launcher_NOTIFICATION_URL "" CACHE STRING "URL for checking for notifications.")
-
-# The metadata server
-set(Launcher_META_URL "https://meta.multimc.org/v1/" CACHE STRING "URL to fetch Launcher's meta files from.")
-
-# paste.ee API key
-set(Launcher_PASTE_EE_API_KEY "utLvciUouSURFzfjPxLBf5W4ISsUX4pwBDF7N1AfZ" CACHE STRING "API key you can get from paste.ee when you register an account")
-
-# Imgur API Client ID
-set(Launcher_IMGUR_CLIENT_ID "5b97b0713fba4a3" CACHE STRING "Client ID you can get from Imgur when you register an application")
-
-# Google analytics ID
-set(Launcher_ANALYTICS_ID "UA-87731965-2" CACHE STRING "ID you can get from Google analytics")
-
-# Bug tracker URL
-set(Launcher_BUG_TRACKER_URL "" CACHE STRING "URL for the bug tracker.")
-
-# Discord URL
-set(Launcher_DISCORD_URL "" CACHE STRING "URL for the Discord guild.")
-
-# Subreddit URL
-set(Launcher_SUBREDDIT_URL "" CACHE STRING "URL for the subreddit.")
-
-# Use the secrets library or a public stub?
-option(Launcher_EMBED_SECRETS "Determines whether to embed secrets. Secrets are separate and non-public." OFF)
 
 #### Check the current Git commit and branch
 include(GetGitRevisionDescription)
@@ -136,24 +113,38 @@ find_package(Qt5Xml REQUIRED)
 
 # The Qt5 cmake files don't provide its install paths, so ask qmake.
 include(QMakeQuery)
-query_qmake(QT_INSTALL_PLUGINS QT_PLUGINS_DIR)
-query_qmake(QT_INSTALL_IMPORTS QT_IMPORTS_DIR)
-query_qmake(QT_INSTALL_LIBS QT_LIBS_DIR)
-query_qmake(QT_INSTALL_LIBEXECS QT_LIBEXECS_DIR)
-query_qmake(QT_HOST_DATA QT_DATA_DIR)
-set(QT_MKSPECS_DIR ${QT_DATA_DIR}/mkspecs)
+query_qmake(QUERY QT_INSTALL_PLUGINS RESULT QT_PLUGINS_DIR)
+query_qmake(QUERY QT_INSTALL_LIBS RESULT QT_LIBS_DIR)
+query_qmake(QUERY QT_INSTALL_LIBEXECS RESULT QT_LIBEXECS_DIR)
 
 if (Qt5_POSITION_INDEPENDENT_CODE)
     SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
-####################################### Secrets #######################################
+####################################### Branding #######################################
 
-if(Launcher_EMBED_SECRETS)
-    add_subdirectory(secrets)
-else()
-    add_subdirectory(notsecrets)
-endif()
+set(Launcher_CommonName "MultiMC")
+
+set(Launcher_Copyright "MultiMC Contributors")
+set(Launcher_Domain "multimc.org")
+set(Launcher_Name "${Launcher_CommonName}")
+set(Launcher_DisplayName "${Launcher_CommonName} 5")
+set(Launcher_UserAgent "${Launcher_CommonName}/5.0")
+set(Launcher_ConfigFile "multimc.cfg")
+set(Launcher_Git "https://github.com/MultiMC/Launcher")
+
+set(Launcher_Branding_ICNS "${PROJECT_SOURCE_DIR}/branding/${Launcher_CommonName}.icns")
+set(Launcher_Branding_WindowsRC "${PROJECT_SOURCE_DIR}/branding/multimc.rc")
+set(Launcher_Branding_LogoQRC "${PROJECT_SOURCE_DIR}/branding/logo.qrc")
+
+set(Launcher_META_URL "https://meta.multimc.org/v1/")
+set(Launcher_PASTE_EE_API_KEY "utLvciUouSURFzfjPxLBf5W4ISsUX4pwBDF7N1AfZ")
+set(Launcher_MSA_CLIENT_ID "499546d9-bbfe-4b9b-a086-eb3d75afb78f")
+set(Launcher_IMGUR_CLIENT_ID "5b97b0713fba4a3")
+set(Launcher_BUG_TRACKER_URL "https://github.com/MultiMC/Launcher/issues")
+set(Launcher_DISCORD_URL "https://discord.gg/multimc")
+set(Launcher_SUBREDDIT_URL "https://www.reddit.com/r/MultiMC/")
+set(Launcher_PATREON_URL "https://www.patreon.com/multimc")
 
 ####################################### Install layout #######################################
 
@@ -195,7 +186,7 @@ if(Launcher_LAYOUT_REAL STREQUAL "mac-bundle")
     set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${Launcher_VERSION_MAJOR}.${Launcher_VERSION_MINOR}.${Launcher_VERSION_HOTFIX}.${Launcher_VERSION_BUILD}")
     set(MACOSX_BUNDLE_LONG_VERSION_STRING "${Launcher_VERSION_MAJOR}.${Launcher_VERSION_MINOR}.${Launcher_VERSION_HOTFIX}.${Launcher_VERSION_BUILD}")
     set(MACOSX_BUNDLE_ICON_FILE ${Launcher_Name}.icns)
-    set(MACOSX_BUNDLE_COPYRIGHT "Copyright 2015-2023 ${Launcher_Copyright}")
+    set(MACOSX_BUNDLE_COPYRIGHT "Copyright 2015-2024 ${Launcher_Copyright}")
 
     # directories to look for dependencies
     set(DIRS ${QT_LIBS_DIR} ${QT_LIBEXECS_DIR} ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
@@ -256,17 +247,17 @@ set(NBT_NAME Launcher_nbt++)
 set(NBT_DEST_DIR ${LIBRARY_DEST_DIR})
 add_subdirectory(libraries/libnbtplusplus)
 
-add_subdirectory(libraries/ganalytics) # google analytics library
 add_subdirectory(libraries/systeminfo) # system information library
 add_subdirectory(libraries/hoedown) # markdown parser
 add_subdirectory(libraries/launcher) # java based launcher part for Minecraft
 add_subdirectory(libraries/javacheck) # java compatibility checker
 add_subdirectory(libraries/xz-embedded) # xz compression
+add_subdirectory(libraries/qrcode) # library for generating QR codes
 add_subdirectory(libraries/quazip) # zip manipulation library
 add_subdirectory(libraries/rainbow) # Qt extension for colors
 add_subdirectory(libraries/iconfix) # fork of Qt's QIcon loader
 add_subdirectory(libraries/LocalPeer) # fork of a library from Qt solutions
-add_subdirectory(libraries/classparser) # google analytics library
+add_subdirectory(libraries/classparser) # java class file parser
 add_subdirectory(libraries/optional-bare)
 add_subdirectory(libraries/tomlc99) # toml parser
 add_subdirectory(libraries/katabasis) # An OAuth2 library that tried to do too much

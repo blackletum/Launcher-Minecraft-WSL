@@ -40,8 +40,8 @@ public: /* con/des */
     explicit Version(const QString &uid, const QString &version);
     virtual ~Version();
 
-    QString descriptor() override;
-    QString name() override;
+    QString descriptor() const override;
+    QString name() const override;
     QString typeString() const override;
 
     QString uid() const

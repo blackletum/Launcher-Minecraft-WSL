@@ -29,11 +29,11 @@ Meta::Version::~Version()
 {
 }
 
-QString Meta::Version::descriptor()
+QString Meta::Version::descriptor() const
 {
     return m_version;
 }
-QString Meta::Version::name()
+QString Meta::Version::name() const
 {
     if(m_data)
         return m_data->name;

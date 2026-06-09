@@ -1,16 +1,14 @@
 #include "LaunchController.h"
 #include "minecraft/auth/AccountList.h"
 #include "Application.h"
+#include "BuildConfig.h"
 
 #include "ui/MainWindow.h"
 #include "ui/InstanceWindow.h"
 #include "ui/dialogs/CustomMessageBox.h"
 #include "ui/dialogs/ProfileSelectDialog.h"
 #include "ui/dialogs/ProgressDialog.h"
-#include "ui/dialogs/EditAccountDialog.h"
-#include "ui/dialogs/ProfileSetupDialog.h"
-#include "ui/dialogs/LoginDialog.h"
-#include "ui/dialogs/MSALoginDialog.h"
+#include "ui/dialogs/OfflineNameDialog.h"
 
 #include <QLineEdit>
 #include <QInputDialog>
@@ -25,6 +23,7 @@
 #include "tasks/Task.h"
 #include "minecraft/auth/AccountTask.h"
 #include "launch/steps/TextPrint.h"
+#include "ui/dialogs/AccountsDialog.h"
 
 LaunchController::LaunchController(QObject *parent) : Task(parent)
 {
@@ -52,16 +51,25 @@ void LaunchController::decideAccount()
         return;
     }
 
-    // Find an account to use.
+    // Find a valid account to use.
     auto accounts = APPLICATION->accounts();
-    if (accounts->count() <= 0)
+    bool hasAValidAccount = false;
+    for (int i = 0; i < accounts.get()->count(); i++) {
+        auto currentAccount = accounts.get()->at(i);
+        if (currentAccount.isAccount && currentAccount.account != nullptr) {
+            hasAValidAccount = true;
+            break;
+        }
+    }
+
+    if (!hasAValidAccount)
     {
         // Tell the user they need to log in at least one account in order to play.
         auto reply = CustomMessageBox::selectable(
             m_parentWidget,
             tr("No Accounts"),
-            tr("In order to play Minecraft, you must have at least one Mojang or Minecraft "
-               "account logged in."
+            tr("In order to play Minecraft, you must have at least one Minecraft account "
+               "logged in. "
                "Would you like to open the account manager to add an account now?"),
             QMessageBox::Information,
             QMessageBox::Yes | QMessageBox::No
@@ -70,7 +78,7 @@ void LaunchController::decideAccount()
         if (reply == QMessageBox::Yes)
         {
             // Open the account manager.
-            APPLICATION->ShowGlobalSettings(m_parentWidget, "accounts");
+            APPLICATION->ShowAccountsDialog(m_parentWidget);
         }
     }
 
@@ -107,20 +115,14 @@ void LaunchController::login() {
         return;
     }
 
-    // we try empty password first :)
-    QString password;
     // we loop until the user succeeds in logging in or gives up
     bool tryagain = true;
-    // the failure. the default failure.
-    const QString needLoginAgain = tr("Your account is currently not logged in. Please enter your password to log in again. <br /> <br /> This could be caused by a password change.");
-    QString failReason = needLoginAgain;
 
     while (tryagain)
     {
         m_session = std::make_shared<AuthSession>();
-        m_session->wants_online = m_online;
+        m_session->wants_online = m_userWantsOnline;
         m_accountToUse->fillSession(m_session);
-
         switch(m_accountToUse->accountState()) {
             case AccountState::Offline: {
                 m_session->wants_online = false;
@@ -131,26 +133,32 @@ void LaunchController::login() {
                     QString usedname;
                     if(m_offlineName.isEmpty()) {
                         // we ask the user for a player name
-                        bool ok = false;
                         QString lastOfflinePlayerName = APPLICATION->settings()->get("LastOfflinePlayerName").toString();
                         usedname = lastOfflinePlayerName.isEmpty() ? m_session->player_name : lastOfflinePlayerName;
-                        QString name = QInputDialog::getText(
-                            m_parentWidget,
-                            tr("Player name"),
-                            tr("Choose your offline mode player name."),
-                            QLineEdit::Normal,
-                            usedname,
-                            &ok
-                        );
-                        if (!ok)
+                        OfflineNameDialog dialog(usedname, m_parentWidget);
+                        int result = dialog.exec();
+                        if(result == OfflineNameDialog::Accepted)
+                        {
+                            usedname = dialog.textValue();
+                            APPLICATION->settings()->set("LastOfflinePlayerName", usedname);
+                        }
+                        else if (result == OfflineNameDialog::Rejected)
                         {
                             tryagain = false;
                             break;
                         }
-                        if (name.length())
+                        else if(result == OfflineNameDialog::OnlineRequested)
                         {
-                            usedname = name;
-                            APPLICATION->settings()->set("LastOfflinePlayerName", usedname);
+                            m_userWantsOnline = true;
+                            if(m_accountToUse->accountState() == AccountState::Offline)
+                            {
+                                auto task = m_accountToUse->refresh();
+                                if(task)
+                                {
+                                    task->start();
+                                }
+                            }
+                            break;
                         }
                     }
                     else {
@@ -162,16 +170,23 @@ void LaunchController::login() {
                 }
                 if(m_accountToUse->ownsMinecraft()) {
                     if(!m_accountToUse->hasProfile()) {
-                        // Now handle setting up a profile name here...
-                        ProfileSetupDialog dialog(m_accountToUse, m_parentWidget);
-                        if (dialog.exec() == QDialog::Accepted)
-                        {
+                        QMessageBox box(m_parentWidget);
+                        box.setWindowTitle(tr("Account doesn't have a Minecraft profile"));
+                        box.setText(tr("The account doesn't have a Minecraft profile yet.\nYou need to create a profile first to play.\n\nDo you want to open the Accounts dialog?"));
+                        box.setIcon(QMessageBox::Warning);
+                        auto accountsButton = box.addButton(tr("Open Accounts"), QMessageBox::ButtonRole::YesRole);
+                        box.addButton(tr("Cancel"), QMessageBox::ButtonRole::NoRole);
+                        box.setDefaultButton(accountsButton);
+
+                        box.exec();
+                        if(box.clickedButton() == accountsButton) {
+                            AccountsDialog dialog(m_parentWidget, m_accountToUse->internalId());
+                            dialog.exec();
                             tryagain = true;
                             continue;
                         }
-                        else
-                        {
-                            emitFailed(tr("Received undetermined session status during login."));
+                        else {
+                            emitFailed(tr("Launch cancelled - account does not own Minecraft."));
                             return;
                         }
                     }
@@ -210,7 +225,7 @@ void LaunchController::login() {
             case AccountState::Working: {
                 // refresh is in progress, we need to wait for it to finish to proceed.
                 ProgressDialog progDialog(m_parentWidget);
-                if (m_online)
+                if (m_userWantsOnline)
                 {
                     progDialog.setSkipButton(true, tr("Play Offline"));
                 }
@@ -225,7 +240,7 @@ void LaunchController::login() {
             }
             */
             case AccountState::Expired: {
-                auto errorString = tr("The account has expired and needs to be logged into manually. Press OK to log in again.");
+                auto errorString = tr("The account has expired and needs to be logged into manually. Press OK to open the accounts window.");
                 auto button = QMessageBox::warning(
                     m_parentWidget,
                     tr("Account refresh failed"),
@@ -235,46 +250,11 @@ void LaunchController::login() {
                 );
                 if (button == QMessageBox::StandardButton::Ok) {
                     auto accounts = APPLICATION->accounts();
-                    bool isDefault = accounts->defaultAccount() == m_accountToUse;
-                    bool msa = m_accountToUse->isMSA();
-                    accounts->removeAccount(accounts->index(accounts->findAccountByProfileId(m_accountToUse->profileId())));
-                    MinecraftAccountPtr newAccount = nullptr;
-                    if (msa) {
-                        if(BuildConfig.BUILD_PLATFORM == "osx64") {
-                            CustomMessageBox::selectable(
-                                    m_parentWidget,
-                                    tr("Microsoft Accounts not available"),
-                                    tr(
-                                            "Microsoft accounts are only usable on macOS 10.13 or newer, with fully updated MultiMC.\n\n"
-                                            "Please update both your operating system and MultiMC."
-                                    ),
-                                    QMessageBox::Warning
-                            )->exec();
-                            emitFailed(tr("Attempted to re-login to a Microsoft account on an unsupported platform"));
-                            return;
-                        }
-                        newAccount = MSALoginDialog::newAccount(
-                                m_parentWidget,
-                                tr("Please enter your Mojang account email and password to add your account.")
-                        );
-                    } else {
-                        newAccount = LoginDialog::newAccount(
-                                m_parentWidget,
-                                tr("Please enter your Mojang account email and password to add your account.")
-                        );
-                    }
-                    if (newAccount) {
-                        accounts->addAccount(newAccount);
-                        if (isDefault) {
-                            accounts->setDefaultAccount(newAccount);
-                        }
-                        m_accountToUse = nullptr;
-                        decideAccount();
-                        continue;
-                    } else {
-                        emitFailed(tr("Account expired and re-login attempt failed"));
-                        return;
-                    }
+                    accounts->removeAccount(m_accountToUse->internalId());
+                    AccountsDialog accountsDialog;
+                    accountsDialog.exec();
+                    emitFailed("The account has expired.");
+                    return;
                 } else {
                     emitFailed(errorString);
                     return;
@@ -345,7 +325,7 @@ void LaunchController::launchInstance()
         online_mode = "online";
 
         // Prepend Server Status
-        QStringList servers = {"authserver.mojang.com", "session.minecraft.net", "textures.minecraft.net", "api.mojang.com"};
+        QStringList servers = {QUrl(BuildConfig.SESSION_BASE).host(), QUrl(BuildConfig.TEXTURE_BASE).host(), QUrl(BuildConfig.API_BASE).host()};
         QString resolved_servers = "";
         QHostInfo host_info;
 
