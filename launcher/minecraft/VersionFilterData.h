@@ -29,9 +29,9 @@ struct VersionFilterData
     QDateTime java17BeginsDate;
     // Release data of the first version to require java 21 (24w14a)
     QDateTime java21BeginsDate;
-    // release date of first version to use --quickPlayMultiplayer instead of --server/--port for directly joining servers
-    QDateTime java25BeginsDate;
     // release date of first version to require java 25 (26.1 Snapshot 1) and new "year.drop.hotfix" version format
+    QDateTime java25BeginsDate;
+    // release date of first version to use --quickPlayMultiplayer instead of --server/--port for directly joining servers
     QDateTime quickPlayBeginsDate;
     // release date of last version to support LiteLoader (1.12.2)
     QDateTime liteLoaderEndsDate;

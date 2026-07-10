@@ -36,7 +36,7 @@ void VerifyJavaInstall::executeTask() {
 
     // Java 25 Requirement
     if (minecraftComponent->getReleaseDateTime() >= g_VersionFilterData.java25BeginsDate) {
-        if (javaVersion.major() < 21) {
+        if (javaVersion.major() < 25) {
             emit logLine("Minecraft 26.1 Snapshot 1 and above require the use of Java 25",
                          MessageLevel::Fatal);
             emitFailed(tr("Minecraft 26.1 Snapshot 1 and above require the use of Java 25"));
