@@ -312,8 +312,37 @@ bool tryLoadInstance(const QString& location, Modpack & out) {
             return false;
         }
         out.instanceDir = location;
-        out.iconPath = FS::PathCombine(location, "folder.jpg");
-        out.icon = QIcon(out.iconPath);
+
+        auto iconPath = FS::PathCombine(location, "folder.jpg");
+        if (QFileInfo::exists(iconPath)) {
+            out.iconPath = iconPath;
+            out.icon = QIcon(iconPath);
+        } else {
+            auto ftbIconPath = FS::PathCombine(location, ".ftbapp/logo");
+            iconPath = FS::PathCombine(location, ".ftbapp/logo.png");
+            if (QFileInfo::exists(ftbIconPath)) {
+                if (!QFileInfo::exists(iconPath)) {
+                    QFile icon(ftbIconPath);
+                    icon.open(QIODevice::ReadOnly);
+                    // .ftbapp/logo contains 1 byte of type information followed by the logo data
+                    icon.seek(1);
+                    auto buffer = icon.read(icon.size() - 1);
+                    icon.close();
+
+                    icon.setFileName(iconPath);
+                    icon.open(QIODevice::WriteOnly);
+                    icon.write(buffer);
+                    icon.flush();
+                    icon.close();
+                }
+                out.iconPath = iconPath;
+                out.icon = QIcon(iconPath);
+            } else {
+                out.iconPath = nullptr;
+                out.icon = QIcon();
+            }
+        }
+
         return true;
     }
     catch (const Exception &e)
