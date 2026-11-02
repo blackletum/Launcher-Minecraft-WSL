@@ -85,6 +85,19 @@ set(Launcher_BUILD_PLATFORM "" CACHE STRING "A short string identifying the plat
 # Channel list URL
 set(Launcher_UPDATER_BASE "" CACHE STRING "Base URL for the updater.")
 
+# The new updater (Design/Updater.md in the MultiMC repository). Off by default: builds without it
+# don't contain it at all, and update the way they always have.
+option(Launcher_NEW_UPDATER "Build the new updater in place of the current one" OFF)
+# Base URLs of the new updater's tree to start from, in order (the files server, then the bucket)
+set(Launcher_UPDATER_MIRRORS "" CACHE STRING "The new updater: compiled-in base URLs of the tree, a list")
+# Pinned root keys: Ed25519 public keys, 64 hex digits each
+set(Launcher_UPDATER_ROOT_KEYS "" CACHE STRING "The new updater: pinned root public keys, a list")
+# The keys document compiled in as the floor; it must list exactly the pinned root keys
+set(Launcher_UPDATER_KEYS_FLOOR "" CACHE FILEPATH "The new updater: the keys document compiled in")
+set(Launcher_UPDATER_SERIAL_FLOOR "0" CACHE STRING "The new updater: the lowest tags serial accepted")
+# The variant ID this build is, e.g. linux-x86_64-qt5 (see Design/UpdaterFormats.md)
+set(Launcher_UPDATER_VARIANT "" CACHE STRING "The new updater: this build's variant ID")
+
 # Notification URL
 set(Launcher_NOTIFICATION_URL "" CACHE STRING "URL for checking for notifications.")
 

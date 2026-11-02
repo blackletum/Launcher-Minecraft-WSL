@@ -59,6 +59,9 @@
 
 #include "updater/UpdateChecker.h"
 #include "updater/SystemRequirements.h"
+#ifdef LAUNCHER_NEW_UPDATER
+#include "updater/tree/Checker.h"
+#endif
 
 #include "tools/JProfiler.h"
 #include "tools/JVisualVM.h"
@@ -118,6 +121,8 @@ void appDebugOutput(QtMsgType type, const QMessageLogContext &context, const QSt
     fflush(stderr);
 }
 
+// the current updater's platform moves; the new updater has variants for them
+#ifndef LAUNCHER_NEW_UPDATER
 QString getIdealPlatform(QString currentPlatform) {
     auto info = Sys::getKernelInfo();
     switch(info.kernelType) {
@@ -149,6 +154,7 @@ QString getIdealPlatform(QString currentPlatform) {
     }
     return currentPlatform;
 }
+#endif
 
 }
 
@@ -659,6 +665,11 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
         m_settings.reset(new INISettingsObject(BuildConfig.LAUNCHER_CONFIGFILE, this));
         // Updates
         m_settings->registerSetting("AutoUpdate", true);
+#ifdef LAUNCHER_NEW_UPDATER
+        // The new updater's tier: latest, testing or stable. Not the old channel setting, which
+        // develop users have and would put them on Latest.
+        m_settings->registerSetting("UpdateTier", QString("stable"));
+#endif
 
         // Theming
         m_settings->registerSetting("IconTheme", QString("pe_colored"));
@@ -832,6 +843,24 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
     }
 
     // initialize the updater
+#ifdef LAUNCHER_NEW_UPDATER
+    if(BuildConfig.UPDATER_ENABLED)
+    {
+        TreeUpdater::Config config;
+        config.mirrors = BuildConfig.UPDATER_MIRRORS;
+        config.rootKeys = BuildConfig.UPDATER_ROOT_KEYS;
+        config.floorKeys = BuildConfig.UPDATER_KEYS_FLOOR;
+        config.serialFloor = BuildConfig.UPDATER_SERIAL_FLOOR;
+        config.variant = BuildConfig.UPDATER_VARIANT;
+        config.currentBuild = BuildConfig.VERSION_BUILD;
+        // next to the Launcher's settings
+        config.statePath = QDir("updater").absoluteFilePath("state.json");
+        config.root = root();
+        config.system = SystemRequirements::detect();
+        m_treeUpdater.reset(new TreeUpdater::Checker(m_network, config));
+        qDebug() << "<> Updater started.";
+    }
+#else
     if(BuildConfig.UPDATER_ENABLED)
     {
         auto platform = getIdealPlatform(BuildConfig.BUILD_PLATFORM);
@@ -840,6 +869,7 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
         m_updateChecker.reset(new UpdateChecker(m_network, channelUrl, BuildConfig.VERSION_BUILD));
         qDebug() << "<> Updater started.";
     }
+#endif
 
     // Instance icons
     {

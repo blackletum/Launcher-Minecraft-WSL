@@ -1,0 +1,14 @@
+{
+  "format": 1,
+  "issued": "2026-10-01T00:00:00Z",
+  "mirrors": [
+    [
+      "https://files.invalid/updater/"
+    ],
+    [
+      "https://r2.invalid/updater/",
+      "https://mirror.invalid/updater/"
+    ]
+  ],
+  "type": "mirrors"
+}

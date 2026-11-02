@@ -22,6 +22,12 @@
 #include <QTextCharFormat>
 
 #include "updater/UpdateChecker.h"
+#ifdef LAUNCHER_NEW_UPDATER
+#include "updater/tree/Checker.h"
+#include <QComboBox>
+#include <QHBoxLayout>
+#include <QLabel>
+#endif
 
 #include "settings/SettingsObject.h"
 #include <FileSystem.h>
@@ -55,6 +61,20 @@ LauncherPage::LauncherPage(QWidget *parent) : QWidget(parent), ui(new Ui::Launch
     defaultFormat = new QTextCharFormat(ui->fontPreview->currentCharFormat());
 
     m_languageModel = APPLICATION->translations();
+#ifdef LAUNCHER_NEW_UPDATER
+    {
+        auto tierLayout = new QHBoxLayout();
+        auto tierLabel = new QLabel(tr("Update tier:"), ui->updateSettingsBox);
+        m_tierComboBox = new QComboBox(ui->updateSettingsBox);
+        m_tierComboBox->addItem(tr("Stable: builds tested for a long time"), TreeUpdater::tierName(TreeUpdater::Tier::Stable));
+        m_tierComboBox->addItem(tr("Testing: builds being tested for Stable"), TreeUpdater::tierName(TreeUpdater::Tier::Testing));
+        m_tierComboBox->addItem(tr("Latest: the newest build, with every change"), TreeUpdater::tierName(TreeUpdater::Tier::Latest));
+        tierLabel->setBuddy(m_tierComboBox);
+        tierLayout->addWidget(tierLabel);
+        tierLayout->addWidget(m_tierComboBox, 1);
+        qobject_cast<QBoxLayout *>(ui->updateSettingsBox->layout())->addLayout(tierLayout);
+    }
+#endif
     loadSettings();
 
     // Updater
@@ -190,6 +210,22 @@ void LauncherPage::applySettings()
 
     // Updates
     s->set("AutoUpdate", ui->autoUpdateCheckBox->isChecked());
+#ifdef LAUNCHER_NEW_UPDATER
+    {
+        auto tier = m_tierComboBox->currentData().toString();
+        if(tier != s->get("UpdateTier").toString())
+        {
+            s->set("UpdateTier", tier);
+            // a switch is the one time an older build is offered (as a downgrade, with a warning)
+            TreeUpdater::Tier parsed;
+            auto updater = APPLICATION->treeUpdater();
+            if(updater && APPLICATION->updatesAreAllowed() && TreeUpdater::parseTier(tier, parsed))
+            {
+                updater->check(parsed, true, true);
+            }
+        }
+    }
+#endif
     auto original = s->get("IconTheme").toString();
     //FIXME: make generic
     switch (ui->themeComboBox->currentIndex())
@@ -271,6 +307,12 @@ void LauncherPage::loadSettings()
     auto s = APPLICATION->settings();
     // Updates
     ui->autoUpdateCheckBox->setChecked(s->get("AutoUpdate").toBool());
+#ifdef LAUNCHER_NEW_UPDATER
+    {
+        auto index = m_tierComboBox->findData(s->get("UpdateTier").toString());
+        m_tierComboBox->setCurrentIndex(index < 0 ? 0 : index);
+    }
+#endif
     //FIXME: make generic
     auto theme = s->get("IconTheme").toString();
     if (theme == "pe_dark")

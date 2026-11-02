@@ -1,5 +1,7 @@
 #pragma once
+#include <QByteArray>
 #include <QString>
+#include <QStringList>
 
 /**
  * \brief The Config class holds all the build-time information passed from the build system.
@@ -37,6 +39,19 @@ public:
 
     /// URL for the updater's channel
     QString UPDATER_BASE;
+
+#ifdef LAUNCHER_NEW_UPDATER
+    /// The new updater: base URLs of the tree to start from, in order
+    QStringList UPDATER_MIRRORS;
+    /// The new updater: pinned root public keys (hex)
+    QStringList UPDATER_ROOT_KEYS;
+    /// The new updater: the keys document trusted without a signature, as its exact bytes
+    QByteArray UPDATER_KEYS_FLOOR;
+    /// The new updater: the lowest tags serial accepted
+    qint64 UPDATER_SERIAL_FLOOR = 0;
+    /// The new updater: this build's variant ID
+    QString UPDATER_VARIANT;
+#endif
 
 
     /// User-Agent to use.

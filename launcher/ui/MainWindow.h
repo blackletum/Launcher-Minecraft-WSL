@@ -28,6 +28,11 @@
 
 class LaunchController;
 class NewsChecker;
+#ifdef LAUNCHER_NEW_UPDATER
+namespace TreeUpdater {
+    struct CheckResult;
+}
+#endif
 class NotificationChecker;
 class QToolButton;
 class InstanceProxyModel;
@@ -184,6 +189,12 @@ private slots:
      * Runs the DownloadTask and installs updates.
      */
     void downloadUpdates(GoUpdate::Status status);
+
+#ifdef LAUNCHER_NEW_UPDATER
+    // the new updater: what a check found, and downloading and installing it
+    void treeUpdateChecked(const TreeUpdater::CheckResult &result);
+    void downloadTreeUpdate(const TreeUpdater::CheckResult &result);
+#endif
 
     void konamiTriggered();
 

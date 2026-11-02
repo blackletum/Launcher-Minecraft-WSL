@@ -28,6 +28,11 @@ class IconList;
 class QNetworkAccessManager;
 class JavaInstallList;
 class UpdateChecker;
+#ifdef LAUNCHER_NEW_UPDATER
+namespace TreeUpdater {
+    class Checker;
+}
+#endif
 class BaseProfilerFactory;
 class BaseDetachedToolFactory;
 class TranslationsModel;
@@ -80,6 +85,13 @@ public:
     shared_qobject_ptr<UpdateChecker> updateChecker() {
         return m_updateChecker;
     }
+
+#ifdef LAUNCHER_NEW_UPDATER
+    // the new updater, in place of updateChecker()
+    shared_qobject_ptr<TreeUpdater::Checker> treeUpdater() {
+        return m_treeUpdater;
+    }
+#endif
 
     std::shared_ptr<TranslationsModel> translations();
 
@@ -189,6 +201,9 @@ private:
     shared_qobject_ptr<QNetworkAccessManager> m_network;
 
     shared_qobject_ptr<UpdateChecker> m_updateChecker;
+#ifdef LAUNCHER_NEW_UPDATER
+    shared_qobject_ptr<TreeUpdater::Checker> m_treeUpdater;
+#endif
     shared_qobject_ptr<AccountList> m_accounts;
 
     shared_qobject_ptr<HttpMetaCache> m_metacache;

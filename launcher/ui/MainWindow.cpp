@@ -62,6 +62,10 @@
 #include <tools/BaseProfiler.h>
 #include <updater/DownloadTask.h>
 #include <updater/UpdateChecker.h>
+#ifdef LAUNCHER_NEW_UPDATER
+#include <updater/tree/Checker.h>
+#include <updater/tree/DownloadTask.h>
+#endif
 #include <DesktopServices.h>
 #include "InstanceWindow.h"
 #include "InstancePageProvider.h"
@@ -833,6 +837,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new MainWindow
         // NOTE: calling the operator like that is an ugly hack to appease ancient gcc...
         connect(ui->actionCheckUpdate.operator->(), &QAction::triggered, this, &MainWindow::checkForUpdates);
 
+#ifdef LAUNCHER_NEW_UPDATER
+        auto updater = APPLICATION->treeUpdater();
+        connect(updater.get(), &TreeUpdater::Checker::finished, this, &MainWindow::treeUpdateChecked);
+        if (APPLICATION->settings()->get("AutoUpdate").toBool() && updatesAllowed)
+        {
+            TreeUpdater::Tier tier = TreeUpdater::Tier::Stable;
+            TreeUpdater::parseTier(APPLICATION->settings()->get("UpdateTier").toString(), tier);
+            updater->check(tier, false, false);
+        }
+#else
         // set up the updater object.
         auto updater = APPLICATION->updateChecker();
         connect(updater.get(), &UpdateChecker::updateAvailable, this, &MainWindow::updateAvailable);
@@ -842,6 +856,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new MainWindow
         {
             updater->checkForUpdate(false);
         }
+#endif
     }
 
     {
@@ -1349,6 +1364,118 @@ void MainWindow::downloadUpdates(GoUpdate::Status status)
     }
 }
 
+#ifdef LAUNCHER_NEW_UPDATER
+void MainWindow::treeUpdateChecked(const TreeUpdater::CheckResult &result)
+{
+    using TreeUpdater::CheckResult;
+    auto tierName = TreeUpdater::tierName(result.tier);
+    auto details = result.messages.join("\n");
+    switch(result.kind)
+    {
+        case CheckResult::Update:
+        {
+            if(!APPLICATION->updatesAreAllowed())
+            {
+                break;
+            }
+            UpdateDialog dlg(true, this, result.commit);
+            if(dlg.exec() == UPDATE_NOW)
+            {
+                downloadTreeUpdate(result);
+            }
+            return;
+        }
+        case CheckResult::Downgrade:
+        {
+            if(!APPLICATION->updatesAreAllowed())
+            {
+                break;
+            }
+            auto answer = CustomMessageBox::selectable(
+                this, tr("Older build"),
+                tr("The %1 tier is on build %2, which is older than this build (%3).\n\n"
+                   "Going back is not always safe: newer builds may have changed how your data is stored, "
+                   "and an older build may not be able to read it. Make a backup of your instances first.\n\n"
+                   "Install build %2 anyway?").arg(tierName).arg(result.build).arg(result.currentBuild),
+                QMessageBox::Warning, QMessageBox::Yes | QMessageBox::No, QMessageBox::No)->exec();
+            if(answer == QMessageBox::Yes)
+            {
+                downloadTreeUpdate(result);
+            }
+            return;
+        }
+        default:
+            break;
+    }
+    if(!result.notify)
+    {
+        return;
+    }
+    switch(result.kind)
+    {
+        case CheckResult::NoUpdate:
+        case CheckResult::Update:
+        case CheckResult::Downgrade:
+            if(result.currentWithdrawn)
+            {
+                CustomMessageBox::selectable(this, tr("No updates"), details, QMessageBox::Information)->show();
+            }
+            else
+            {
+                updateNotAvailable();
+            }
+            break;
+        case CheckResult::BehindInstalled:
+            CustomMessageBox::selectable(
+                this, tr("No updates"),
+                tr("The %1 tier is on build %2, which is older than this build (%3). This build stays until there is a newer one.")
+                    .arg(tierName).arg(result.build).arg(result.currentBuild) + (details.isEmpty() ? QString() : "\n\n" + details),
+                QMessageBox::Information)->show();
+            break;
+        case CheckResult::NotForThisMachine:
+        case CheckResult::CannotApply:
+            CustomMessageBox::selectable(
+                this, tr("Update not possible"),
+                tr("Build %1 is available, but it can't be installed here:").arg(result.build) + "\n\n" + details,
+                QMessageBox::Warning)->show();
+            break;
+        case CheckResult::Failed:
+            CustomMessageBox::selectable(this, tr("Update check failed"), tr("Could not check for updates:") + "\n\n" + details, QMessageBox::Warning)->show();
+            break;
+    }
+}
+
+void MainWindow::downloadTreeUpdate(const TreeUpdater::CheckResult &result)
+{
+    if(!APPLICATION->updatesAreAllowed())
+    {
+        return;
+    }
+    qDebug() << "Downloading build" << result.build;
+    ProgressDialog updateDlg(this);
+
+    auto dlPath = FS::PathCombine(APPLICATION->root(), "update", "XXXXXX");
+    if (!FS::ensureFilePathExists(dlPath))
+    {
+        CustomMessageBox::selectable(this, tr("Error"), tr("Couldn't create folder for update downloads:\n%1").arg(dlPath), QMessageBox::Warning)->show();
+    }
+    TreeUpdater::DownloadTask updateTask(APPLICATION->network(), result, APPLICATION->root(), dlPath, &updateDlg);
+    // If the task succeeds, install the updates.
+    if (updateDlg.execWithTask(&updateTask))
+    {
+        // as in downloadUpdates(): no launching instances until this process exits or the update fails
+        APPLICATION->updateIsRunning(true);
+        UpdateController update(this, APPLICATION->root(), updateTask.updateFilesDir(), updateTask.operations());
+        update.installUpdates();
+        APPLICATION->updateIsRunning(false);
+    }
+    else
+    {
+        CustomMessageBox::selectable(this, tr("Error"), updateTask.failReason(), QMessageBox::Warning)->show();
+    }
+}
+#endif
+
 void MainWindow::onCatToggled(bool state)
 {
     setCatBackground(state);
@@ -1658,8 +1785,14 @@ void MainWindow::checkForUpdates()
 {
     if(BuildConfig.UPDATER_ENABLED)
     {
+#ifdef LAUNCHER_NEW_UPDATER
+        TreeUpdater::Tier tier = TreeUpdater::Tier::Stable;
+        TreeUpdater::parseTier(APPLICATION->settings()->get("UpdateTier").toString(), tier);
+        APPLICATION->treeUpdater()->check(tier, false, true);
+#else
         auto updater = APPLICATION->updateChecker();
         updater->checkForUpdate(true);
+#endif
     }
     else
     {

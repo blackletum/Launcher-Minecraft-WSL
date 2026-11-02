@@ -25,6 +25,7 @@
 #include <translations/TranslationsModel.h>
 
 class QTextCharFormat;
+class QComboBox;
 class SettingsObject;
 
 namespace Ui
@@ -61,6 +62,10 @@ public:
 private:
     void applySettings();
     void loadSettings();
+#ifdef LAUNCHER_NEW_UPDATER
+    // the new updater's tier; only in builds with it
+    QComboBox *m_tierComboBox = nullptr;
+#endif
 
 private
 slots:

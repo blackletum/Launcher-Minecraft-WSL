@@ -166,6 +166,55 @@ set(NEW_UPDATE_SOURCES
     updater/SystemRequirements.cpp
 )
 
+# The new update client (Design/Updater.md in the MultiMC repository), only with Launcher_NEW_UPDATER
+if(Launcher_NEW_UPDATER)
+    set(TREE_UPDATE_SOURCES
+        updater/tree/Formats.h
+        updater/tree/Formats.cpp
+        updater/tree/State.h
+        updater/tree/State.cpp
+        updater/tree/Plan.h
+        updater/tree/Plan.cpp
+        updater/tree/Fetch.h
+        updater/tree/Fetch.cpp
+        updater/tree/Checker.h
+        updater/tree/Checker.cpp
+        updater/tree/DownloadTask.h
+        updater/tree/DownloadTask.cpp
+    )
+
+    # test trees made by updater/tree/make-test-trees.py
+    add_unit_test(TreeFormats
+        SOURCES updater/tree/Formats_test.cpp
+        LIBS Launcher_logic
+        DATA updater/testdata
+        )
+
+    add_unit_test(TreeState
+        SOURCES updater/tree/State_test.cpp
+        LIBS Launcher_logic
+        DATA updater/testdata
+        )
+
+    add_unit_test(TreePlan
+        SOURCES updater/tree/Plan_test.cpp
+        LIBS Launcher_logic
+        DATA updater/testdata
+        )
+
+    add_unit_test(TreeChecker
+        SOURCES updater/tree/Checker_test.cpp
+        LIBS Launcher_logic
+        DATA updater/testdata
+        )
+
+    add_unit_test(TreeDownloadTask
+        SOURCES updater/tree/DownloadTask_test.cpp
+        LIBS Launcher_logic
+        DATA updater/testdata
+        )
+endif()
+
 add_unit_test(UpdateChecker
     SOURCES updater/UpdateChecker_test.cpp
     LIBS Launcher_logic
@@ -560,6 +609,7 @@ set(LOGIC_SOURCES
     ${LAUNCH_SOURCES}
     ${UPDATE_SOURCES}
     ${NEW_UPDATE_SOURCES}
+    ${TREE_UPDATE_SOURCES}
     ${NOTIFICATIONS_SOURCES}
     ${NEWS_SOURCES}
     ${MINECRAFT_SOURCES}
