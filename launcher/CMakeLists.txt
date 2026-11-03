@@ -86,6 +86,11 @@ set(CORE_SOURCES
     MMCTime.cpp
 )
 
+add_unit_test(Download
+    SOURCES net/Download_test.cpp
+    LIBS Launcher_logic
+    )
+
 add_unit_test(FileSystem
     SOURCES FileSystem_test.cpp
     LIBS Launcher_logic
@@ -94,6 +99,11 @@ add_unit_test(FileSystem
 
 add_unit_test(GZip
     SOURCES GZip_test.cpp
+    LIBS Launcher_logic
+    )
+
+add_unit_test(Json
+    SOURCES Json_test.cpp
     LIBS Launcher_logic
     )
 
@@ -123,6 +133,9 @@ set(NET_SOURCES
     net/PasteUpload.cpp
     net/PasteUpload.h
     net/Sink.h
+    net/SizeValidator.h
+    net/Mirrors.h
+    net/Mirrors.cpp
     net/Validator.h
 )
 
