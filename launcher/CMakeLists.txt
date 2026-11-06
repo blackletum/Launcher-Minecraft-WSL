@@ -712,6 +712,8 @@ SET(LAUNCHER_SOURCES
     ui/setupwizard/JavaWizardPage.h
     ui/setupwizard/LanguageWizardPage.cpp
     ui/setupwizard/LanguageWizardPage.h
+    ui/setupwizard/UpdatesWizardPage.cpp
+    ui/setupwizard/UpdatesWizardPage.h
 
     # GUI - themes
     ui/themes/FusionTheme.cpp
@@ -779,6 +781,8 @@ SET(LAUNCHER_SOURCES
     ui/pages/global/JavaPage.h
     ui/pages/global/LanguagePage.cpp
     ui/pages/global/LanguagePage.h
+    ui/pages/global/UpdatesPage.cpp
+    ui/pages/global/UpdatesPage.h
     ui/pages/global/MinecraftPage.cpp
     ui/pages/global/MinecraftPage.h
     ui/pages/global/LauncherPage.cpp
@@ -882,6 +886,10 @@ SET(LAUNCHER_SOURCES
     ui/widgets/LabeledToolButton.h
     ui/widgets/LanguageSelectionWidget.cpp
     ui/widgets/LanguageSelectionWidget.h
+    ui/widgets/TierLever.cpp
+    ui/widgets/TierLever.h
+    ui/widgets/UpdateTierWidget.cpp
+    ui/widgets/UpdateTierWidget.h
     ui/widgets/LineSeparator.cpp
     ui/widgets/LineSeparator.h
     ui/widgets/LogView.cpp
@@ -1052,7 +1060,7 @@ if(INSTALL_BUNDLE STREQUAL "full")
             DIRECTORY "${QT_PLUGINS_DIR}/imageformats"
             DESTINATION ${PLUGIN_DEST_DIR}
             COMPONENT Runtime
-            REGEX "tga|tiff|mng|webp" EXCLUDE
+            REGEX "tga|tiff|mng" EXCLUDE
         )
         # Icon engines
         install(
@@ -1082,7 +1090,7 @@ if(INSTALL_BUNDLE STREQUAL "full")
             DIRECTORY "${QT_PLUGINS_DIR}/imageformats"
             DESTINATION ${PLUGIN_DEST_DIR}
             COMPONENT Runtime
-            REGEX "tga|tiff|mng|webp" EXCLUDE
+            REGEX "tga|tiff|mng" EXCLUDE
             REGEX "d\\." EXCLUDE
             REGEX "_debug\\." EXCLUDE
             REGEX "\\.dSYM" EXCLUDE
