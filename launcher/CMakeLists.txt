@@ -84,7 +84,16 @@ set(CORE_SOURCES
     # Time
     MMCTime.h
     MMCTime.cpp
+
+    # Colour arithmetic (luminance, contrast, mixing)
+    Colors.h
+    Colors.cpp
 )
+
+add_unit_test(Colors
+    SOURCES Colors_test.cpp
+    LIBS Launcher_logic
+    )
 
 add_unit_test(Download
     SOURCES net/Download_test.cpp
@@ -95,6 +104,11 @@ add_unit_test(FileSystem
     SOURCES FileSystem_test.cpp
     LIBS Launcher_logic
     DATA testdata
+    )
+
+add_unit_test(MMCZip
+    SOURCES MMCZip_test.cpp
+    LIBS Launcher_logic
     )
 
 add_unit_test(GZip
@@ -728,6 +742,8 @@ SET(LAUNCHER_SOURCES
     ui/themes/ITheme.h
     ui/themes/SystemTheme.cpp
     ui/themes/SystemTheme.h
+    ui/themes/TitleBar.cpp
+    ui/themes/TitleBar.h
 
     # Processes
     LaunchController.h
@@ -926,6 +942,15 @@ SET(LAUNCHER_SOURCES
     ui/instanceview/VisualGroup.h
 )
 
+# Native title bars that follow the theme
+if(WIN32)
+    list(APPEND LAUNCHER_SOURCES ui/themes/TitleBar_win.cpp)
+elseif(APPLE)
+    list(APPEND LAUNCHER_SOURCES MacOS.h ui/themes/TitleBar_mac.mm)
+else()
+    list(APPEND LAUNCHER_SOURCES ui/themes/TitleBar_other.cpp)
+endif()
+
 qt5_wrap_ui(LAUNCHER_UI
     ui/dialogs/AboutDialog.ui
     ui/dialogs/AccountsDialog.ui
@@ -1019,9 +1044,11 @@ target_link_libraries(Launcher_logic
     Launcher_iconfix
     ${QUAZIP_LIBRARIES}
     hoedown
-    Launcher_rainbow
     LocalPeer
 )
+if(APPLE)
+    target_link_libraries(Launcher_logic "-framework AppKit")
+endif()
 
 add_executable(${Launcher_Name} MACOSX_BUNDLE WIN32 main.cpp ${LAUNCHER_RCS})
 target_link_libraries(${Launcher_Name} Launcher_logic)
