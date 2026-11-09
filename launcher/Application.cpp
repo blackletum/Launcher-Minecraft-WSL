@@ -12,22 +12,20 @@
 #include "ui/pages/global/JavaPage.h"
 #include "ui/pages/global/LanguagePage.h"
 #include "ui/pages/global/UpdatesPage.h"
+#include "ui/pages/global/AppearancePage.h"
 #include "ui/pages/global/ProxyPage.h"
 #include "ui/pages/global/ExternalToolsPage.h"
 #include "ui/pages/global/PasteEEPage.h"
 #include "ui/pages/global/CustomCommandsPage.h"
 
-#include "ui/themes/ITheme.h"
-#include "ui/themes/SystemTheme.h"
-#include "ui/themes/DarkTheme.h"
-#include "ui/themes/BrightTheme.h"
-#include "ui/themes/CustomTheme.h"
+#include "ui/themes/ThemeManager.h"
 #include "ui/themes/TitleBar.h"
 
 #include "ui/setupwizard/SetupWizard.h"
 #include "ui/setupwizard/LanguageWizardPage.h"
 #include "ui/setupwizard/JavaWizardPage.h"
 #include "ui/setupwizard/UpdatesWizardPage.h"
+#include "ui/setupwizard/ThemeWizardPage.h"
 
 #include "ui/dialogs/AccountsDialog.h"
 #include "ui/dialogs/CustomMessageBox.h"
@@ -672,7 +670,12 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
 
         // Theming
         m_settings->registerSetting("IconTheme", QString("pe_colored"));
-        m_settings->registerSetting("ApplicationTheme", QString("system"));
+        // ThemeManager's; empty until chosen (in the setup wizard, ThemeWizardPage), then the
+        // defaults apply. Not the old ApplicationTheme, whose System was the platform's style.
+        m_settings->registerSetting("Theme", QString());
+        m_settings->registerSetting("ThemeStyle", QString());
+        m_settings->registerSetting("AccentSource", QString());
+        m_settings->registerSetting("AccentColor", QString());
 
         // Notifications
         m_settings->registerSetting("ShownNotifications", QString());
@@ -805,6 +808,7 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
         {
             m_globalSettingsProvider = std::make_shared<GenericPageProvider>(tr("Settings"));
             m_globalSettingsProvider->addPage<LauncherPage>();
+            m_globalSettingsProvider->addPage<AppearancePage>();
             if(BuildConfig.UPDATER_ENABLED && BuildConfig.UPDATER_VERSION == 2)
             {
                 m_globalSettingsProvider->addPage<UpdatesPage>();
@@ -895,20 +899,15 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
         auto searchPaths = QIcon::themeSearchPaths();
         searchPaths.append("iconthemes");
         QIcon::setThemeSearchPaths(searchPaths);
+        // custom icon themes needn't have every icon (the mod platforms' logos, say), and
+        // often inherit from themes the launcher doesn't have: the rest come from ours
+        XdgIcon::setFallbackThemeName("multimc");
         qDebug() << "<> Icon themes initialized.";
     }
 
     // Initialize widget themes
     {
-        auto insertTheme = [this](ITheme * theme)
-        {
-            m_themes.insert(std::make_pair(theme->id(), std::unique_ptr<ITheme>(theme)));
-        };
-        auto darkTheme = new DarkTheme();
-        insertTheme(new SystemTheme());
-        insertTheme(darkTheme);
-        insertTheme(new BrightTheme());
-        insertTheme(new CustomTheme(darkTheme, "custom"));
+        m_themeManager.reset(new ThemeManager(m_settings));
         installEventFilter(new TitleBarWatcher(this));
         qDebug() << "<> Widget themes initialized.";
     }
@@ -1007,7 +1006,7 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
     {
         setIconTheme(settings()->get("IconTheme").toString());
         qDebug() << "<> Icon theme set.";
-        setApplicationTheme(settings()->get("ApplicationTheme").toString(), true);
+        m_themeManager->apply(m_themeManager->savedChoice());
         qDebug() << "<> Application theme set.";
     }
 
@@ -1046,7 +1045,9 @@ bool Application::createSetupWizard()
     // updater v2's tier, until it is chosen; existing installs choose once too
     bool updatesRequired = BuildConfig.UPDATER_ENABLED && BuildConfig.UPDATER_VERSION == 2
         && settings()->get("UpdateTier").toString().isEmpty();
-    bool wizardRequired = javaRequired || languageRequired || updatesRequired;
+    // the theme, until it is chosen; existing installs choose once too
+    bool themeRequired = !m_themeManager->themeChosen();
+    bool wizardRequired = javaRequired || languageRequired || updatesRequired || themeRequired;
 
     if(wizardRequired)
     {
@@ -1054,6 +1055,10 @@ bool Application::createSetupWizard()
         if (languageRequired)
         {
             m_setupWizard->addPage(new LanguageWizardPage(m_setupWizard));
+        }
+        if (themeRequired)
+        {
+            m_setupWizard->addPage(new ThemeWizardPage(m_setupWizard));
         }
         if (updatesRequired)
         {
@@ -1246,36 +1251,14 @@ std::shared_ptr<JavaInstallList> Application::javalist()
     return m_javalist;
 }
 
-std::vector<ITheme *> Application::getValidApplicationThemes()
-{
-    std::vector<ITheme *> ret;
-    auto iter = m_themes.cbegin();
-    while (iter != m_themes.cend())
-    {
-        ret.push_back((*iter).second.get());
-        iter++;
-    }
-    return ret;
-}
-
-void Application::setApplicationTheme(const QString& name, bool initial)
-{
-    auto systemPalette = qApp->palette();
-    auto themeIter = m_themes.find(name);
-    if(themeIter != m_themes.end())
-    {
-        auto & theme = (*themeIter).second;
-        theme->apply(initial);
-    }
-    else
-    {
-        qWarning() << "Tried to set invalid theme:" << name;
-    }
-}
-
 void Application::setIconTheme(const QString& name)
 {
     XdgIcon::setThemeName(name);
+    // icons load again from the new theme when they are painted next
+    for(auto widget: QApplication::allWidgets())
+    {
+        widget->update();
+    }
 }
 
 QIcon Application::getThemedIcon(const QString& name)
