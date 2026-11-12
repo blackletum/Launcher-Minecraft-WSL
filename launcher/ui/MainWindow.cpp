@@ -63,6 +63,7 @@
 #include <updater/v1/DownloadTask.h>
 #include <updater/v1/UpdateChecker.h>
 #include <updater/v2/Checker.h>
+#include <updater/v2/CheckHistory.h>
 #include <updater/v2/DownloadTask.h>
 #include <updater/v2/InstallController.h>
 #include <DesktopServices.h>
@@ -97,6 +98,23 @@
 #include "MMCTime.h"
 
 namespace {
+// a variant's name from the tier's build or the installed one; its ID when neither has it
+QString variantName(const UpdaterV2::CheckResult &result, const QString &id)
+{
+    for(auto &v: result.runnable)
+    {
+        if(v.id == id)
+        {
+            return v.name;
+        }
+    }
+    if(result.haveCurrent && result.current.id == id)
+    {
+        return result.current.name;
+    }
+    return id;
+}
+
 QString profileInUseFilter(const QString& profileName, const QString& accountName, bool used)
 {
     QString displayString;
@@ -678,12 +696,6 @@ public:
 
     void retranslateUi(QMainWindow *MainWindow)
     {
-        QString winTitle = tr("%1 - Version %2", "Launcher - Version X").arg(BuildConfig.LAUNCHER_DISPLAYNAME, BuildConfig.printableVersionString());
-        if (!BuildConfig.BUILD_PLATFORM.isEmpty())
-        {
-            winTitle += tr(" on %1", "on platform, as in operating system").arg(BuildConfig.BUILD_PLATFORM);
-        }
-        MainWindow->setWindowTitle(winTitle);
         // all the actions
         for(auto * item: all_actions)
         {
@@ -799,6 +811,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new MainWindow
     m_statusCenter->setObjectName(QStringLiteral("statusCenter"));
     statusBar()->addPermanentWidget(m_statusLeft, 1);
     statusBar()->addPermanentWidget(m_statusCenter, 0);
+    QFrame *vSeparator = new QFrame(this);
+    vSeparator->setFrameShape(QFrame::VLine);
+    vSeparator->setFrameShadow(QFrame::Sunken);
+    statusBar()->addPermanentWidget(vSeparator, 0);
+    QString versionText = BuildConfig.printableVersionString();
+    if (!BuildConfig.BUILD_PLATFORM.isEmpty())
+    {
+        versionText += " " + BuildConfig.BUILD_PLATFORM;
+    }
+    m_statusVersion = new QLabel(versionText, this);
+    m_statusVersion->setObjectName(QStringLiteral("statusVersion"));
+    m_statusVersion->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    statusBar()->addPermanentWidget(m_statusVersion, 0);
 
     // Add "manage accounts" button, right align
     QWidget *spacer = new QWidget();
@@ -989,10 +1014,25 @@ void MainWindow::showInstanceContextMenu(const QPoint &pos)
     myMenu.exec(view->mapToGlobal(pos));
 }
 
+namespace {
+// Stylesheets can style tool buttons by popup mode (QToolButton[popupMode="1"]: room for the
+// menu part), but Qt reads such properties only when it polishes a widget: one changed later
+// kept the old look, the menu part over the text
+void setPopupMode(QToolButton *button, QToolButton::ToolButtonPopupMode mode)
+{
+    if (button->popupMode() == mode)
+        return;
+    button->setPopupMode(mode);
+    button->style()->unpolish(button);
+    button->style()->polish(button);
+    button->updateGeometry();
+}
+}
+
 void MainWindow::updateToolsMenu()
 {
     QToolButton *exportButton = dynamic_cast<QToolButton*>(ui->instanceToolBar->widgetForAction(ui->actionExportInstance));
-    exportButton->setPopupMode(QToolButton::MenuButtonPopup);
+    setPopupMode(exportButton, QToolButton::MenuButtonPopup);
 
     QMenu *exportMenu = ui->actionExportInstance->menu();
 
@@ -1025,15 +1065,15 @@ void MainWindow::updateToolsMenu()
     {
         ui->actionLaunchInstance->setMenu(nullptr);
         ui->actionLaunchInstanceOffline->setMenu(nullptr);
-        launchButton->setPopupMode(QToolButton::InstantPopup);
-        launchOfflineButton->setPopupMode(QToolButton::InstantPopup);
+        setPopupMode(launchButton, QToolButton::InstantPopup);
+        setPopupMode(launchOfflineButton, QToolButton::InstantPopup);
         return;
     }
 
     QMenu *launchMenu = ui->actionLaunchInstance->menu();
     QMenu *launchOfflineMenu = ui->actionLaunchInstanceOffline->menu();
-    launchButton->setPopupMode(QToolButton::MenuButtonPopup);
-    launchOfflineButton->setPopupMode(QToolButton::MenuButtonPopup);
+    setPopupMode(launchButton, QToolButton::MenuButtonPopup);
+    setPopupMode(launchOfflineButton, QToolButton::MenuButtonPopup);
     if (launchMenu)
     {
         launchMenu->clear();
@@ -1387,6 +1427,20 @@ void MainWindow::updateCheckedV2(const UpdaterV2::CheckResult &result)
     using UpdaterV2::CheckResult;
     auto tierName = UpdaterV2::tierName(result.tier);
     auto details = result.messages.join("\n");
+    auto settings = APPLICATION->settings();
+
+    // Every check counts, asked for or not, shown or not: whether checks still get a verified
+    // answer at all. When they haven't for weeks, the user is told even about an automatic
+    // check, since this installation may never update again on its own.
+    UpdaterV2::CheckHistory history;
+    history.lastSuccess = settings->get("UpdateLastSuccess").toLongLong();
+    history.failingSince = settings->get("UpdateFailingSince").toLongLong();
+    history.failedChecks = settings->get("UpdateFailedChecks").toInt();
+    auto failingSince = history.failingSince;
+    bool checksKeepFailing = history.record(result.kind != CheckResult::Failed, QDateTime::currentMSecsSinceEpoch() / 1000);
+    settings->set("UpdateLastSuccess", history.lastSuccess);
+    settings->set("UpdateFailingSince", history.failingSince);
+    settings->set("UpdateFailedChecks", history.failedChecks);
     switch(result.kind)
     {
         case CheckResult::Update:
@@ -1396,7 +1450,83 @@ void MainWindow::updateCheckedV2(const UpdaterV2::CheckResult &result)
                 break;
             }
             UpdateDialog dlg(true, this, result.commit);
-            if(dlg.exec() == UPDATE_NOW)
+            auto update = result;
+            bool canStay = false;
+            if(result.variant.id != result.ownVariant)
+            {
+                for(auto &v: result.runnable)
+                {
+                    if(v.id == result.ownVariant)
+                    {
+                        canStay = true;
+                        update.variant = v;
+                    }
+                }
+                if(canStay)
+                {
+                    dlg.offerVariantMove(tr("Switch to %1, which replaces %2").arg(result.variant.name, variantName(result, result.ownVariant)));
+                }
+                else
+                {
+                    dlg.announceVariantMove(tr("%1 isn't made for this computer any more, so this update switches to %2.")
+                                                .arg(variantName(result, result.ownVariant), result.variant.name));
+                }
+            }
+            auto answer = dlg.exec();
+            if(canStay && !dlg.variantMoveAccepted())
+            {
+                // the user objects to the move: this variant stays, until they change it in the settings
+                APPLICATION->settings()->set("UpdateVariant", result.ownVariant);
+            }
+            else
+            {
+                update.variant = result.variant;
+            }
+            if(answer == UPDATE_NOW)
+            {
+                if(result.ownVariantDropped && APPLICATION->settings()->get("UpdateVariant").toString() == result.ownVariant)
+                {
+                    // staying on it is no longer possible
+                    APPLICATION->settings()->set("UpdateVariant", QString());
+                }
+                downloadUpdateV2(update);
+            }
+            return;
+        }
+        case CheckResult::Switch:
+        {
+            if(!APPLICATION->updatesAreAllowed())
+            {
+                break;
+            }
+            auto own = variantName(result, result.ownVariant);
+            if(APPLICATION->settings()->get("UpdateVariant").toString().isEmpty())
+            {
+                // a move along `supersedes`: the user may object
+                QMessageBox box(QMessageBox::Question, tr("Switch version"),
+                                tr("%1 is available for this computer. It replaces %2, which this installation runs now.\n\n"
+                                   "Switch now? If you keep %2, you can switch later in Settings, Updates.").arg(result.variant.name, own),
+                                QMessageBox::NoButton, this);
+                auto now = box.addButton(tr("Switch now"), QMessageBox::AcceptRole);
+                auto keep = box.addButton(tr("Keep %1").arg(own), QMessageBox::DestructiveRole);
+                box.addButton(tr("Ask me later"), QMessageBox::RejectRole);
+                box.setDefaultButton(now);
+                box.exec();
+                if(box.clickedButton() == keep)
+                {
+                    APPLICATION->settings()->set("UpdateVariant", result.ownVariant);
+                }
+                else if(box.clickedButton() == now)
+                {
+                    downloadUpdateV2(result);
+                }
+                return;
+            }
+            // the user chose it in the settings
+            auto answer = CustomMessageBox::selectable(
+                this, tr("Switch version"), tr("Switch this installation from %1 to %2 now?").arg(own, result.variant.name),
+                QMessageBox::Question, QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)->exec();
+            if(answer == QMessageBox::Yes)
             {
                 downloadUpdateV2(result);
             }
@@ -1424,7 +1554,12 @@ void MainWindow::updateCheckedV2(const UpdaterV2::CheckResult &result)
         default:
             break;
     }
-    if(!result.notify)
+    if(result.kind == CheckResult::NotForThisMachine && !result.notify && settings->get("UpdateNotPossibleBuild").toLongLong() != result.build)
+    {
+        // nothing more can be installed here: said once for each build, even when the user didn't ask
+        settings->set("UpdateNotPossibleBuild", result.build);
+    }
+    else if(!result.notify && !checksKeepFailing)
     {
         return;
     }
@@ -1432,6 +1567,7 @@ void MainWindow::updateCheckedV2(const UpdaterV2::CheckResult &result)
     {
         case CheckResult::NoUpdate:
         case CheckResult::Update:
+        case CheckResult::Switch:
         case CheckResult::Downgrade:
             if(result.currentWithdrawn)
             {
@@ -1450,14 +1586,45 @@ void MainWindow::updateCheckedV2(const UpdaterV2::CheckResult &result)
                 QMessageBox::Information)->show();
             break;
         case CheckResult::NotForThisMachine:
-            CustomMessageBox::selectable(
-                this, tr("Update not possible"),
-                tr("Build %1 is available, but it can't be installed here:").arg(result.build) + "\n\n" + details,
-                QMessageBox::Warning)->show();
+        {
+            auto text = tr("Build %1 is available, but it can't be installed here:").arg(result.build) + "\n\n" + details;
+            if(result.ownVariantDropped)
+            {
+                text = tr("Builds are no longer made of %1, the version this installation runs.").arg(variantName(result, result.ownVariant)) + "\n\n" + text;
+            }
+            CustomMessageBox::selectable(this, tr("Update not possible"), text, QMessageBox::Warning)->show();
             break;
+        }
         case CheckResult::Failed:
-            CustomMessageBox::selectable(this, tr("Update check failed"), tr("Could not check for updates:") + "\n\n" + details, QMessageBox::Warning)->show();
+        {
+            if(!checksKeepFailing)
+            {
+                CustomMessageBox::selectable(this, tr("Update check failed"), tr("Could not check for updates:") + "\n\n" + details, QMessageBox::Warning)->show();
+                break;
+            }
+            // not a passing problem any more: say since when, and where to get a build that works
+            auto date = [](qint64 seconds)
+            {
+                return QLocale().toString(QDateTime::fromMSecsSinceEpoch(seconds * 1000).date(), QLocale::LongFormat);
+            };
+            auto text = tr("%1 has not been able to check for updates since %2.").arg(BuildConfig.LAUNCHER_NAME, date(failingSince)) + " "
+                + (history.lastSuccess > 0 ? tr("The last check that worked was on %1.").arg(date(history.lastSuccess))
+                                           : tr("No check has worked on this installation yet."))
+                + "\n\n" + tr("The last attempt failed with:") + "\n\n" + details + "\n\n"
+                + tr("If this goes on, this installation may not be able to update itself any more. "
+                     "You can get the current version from %1.").arg(BuildConfig.WEBSITE_URL);
+            QMessageBox box(QMessageBox::Warning, tr("Updates are not working"), text, QMessageBox::NoButton, this);
+            box.setTextInteractionFlags(Qt::TextSelectableByMouse);
+            auto website = box.addButton(tr("Open the website"), QMessageBox::ActionRole);
+            box.addButton(QMessageBox::Close);
+            box.setDefaultButton(QMessageBox::Close);
+            box.exec();
+            if(box.clickedButton() == website)
+            {
+                DesktopServices::openUrl(QUrl(BuildConfig.WEBSITE_URL));
+            }
             break;
+        }
     }
 }
 
@@ -1524,20 +1691,12 @@ void MainWindow::setCatBackground(bool enabled)
         else {
             cat = "kitteh";
         }
-        view->setStyleSheet(QString(R"(
-InstanceView
-{
-    background-image: url(:/backgrounds/%1);
-    background-attachment: fixed;
-    background-clip: padding;
-    background-position: top right;
-    background-repeat: none;
-    background-color:palette(base);
-})").arg(cat));
+        // standing on the bottom of the view, in the corner away from where instances start
+        view->setBackground(QPixmap(QString(":/backgrounds/%1").arg(cat)), Qt::AlignRight | Qt::AlignBottom, 8);
     }
     else
     {
-        view->setStyleSheet(QString());
+        view->setBackground(QPixmap());
     }
 }
 

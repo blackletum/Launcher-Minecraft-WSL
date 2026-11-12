@@ -21,9 +21,7 @@ public:
     int VERSION_MAJOR;
     /// The minor version number.
     int VERSION_MINOR;
-    /// The hotfix number.
-    int VERSION_HOTFIX;
-    /// The build number.
+    /// The build number, -1 for a build without one. The version is major.minor.build.
     int VERSION_BUILD;
 
     /**
@@ -125,6 +123,8 @@ public:
     QString SESSION_BASE = "https://sessionserver.mojang.com";
     QString TEXTURE_BASE = "http://textures.minecraft.net";
     QString IMGUR_BASE_URL = "https://api.imgur.com/3/";
+    /// Where the Launcher can be downloaded: for an installation that can no longer update itself
+    QString WEBSITE_URL = "https://multimc.org/";
     QString FMLLIBS_BASE_URL;
     QString PATRONS_URL;
 

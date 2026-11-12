@@ -491,7 +491,9 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
      * If there is one, tell it what the user actually wanted to do and exit.
      * We want to initialize this before logging to avoid messing with the log of a potential already running copy.
      */
-    auto appID = ApplicationId::fromPathAndVersion(QDir::currentPath(), BuildConfig.printableVersionString());
+    // with the platform: switching variants installs the same build for another one, and the new
+    // process must not take the old one, still waiting for it to start, for itself
+    auto appID = ApplicationId::fromPathAndVersion(QDir::currentPath(), BuildConfig.printableVersionString() + " on " + BuildConfig.BUILD_PLATFORM);
     {
         // FIXME: you can run the same binaries with multiple data dirs and they won't clash. This could cause issues for updates.
         m_peerInstance = new LocalPeer(this, appID);
@@ -667,6 +669,17 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
         // develop users have and would put them on Latest. Empty until it is chosen (in the
         // setup wizard, UpdatesWizardPage); until then it is Stable.
         m_settings->registerSetting("UpdateTier", QString());
+        // Updater v2's variant the user chose to stay on or go back to; empty: none, the
+        // Launcher moves along `supersedes` (Design/UpdaterFormats.md)
+        m_settings->registerSetting("UpdateVariant", QString());
+        // the last build an automatic check said can't be installed here, so it's said once
+        m_settings->registerSetting("UpdateNotPossibleBuild", 0);
+        // updater v2's checks, to notice that they keep failing (UpdaterV2::CheckHistory):
+        // when one last got a verified answer, when they started failing, and how many have
+        // failed since (times in seconds since 1970, 0 for none)
+        m_settings->registerSetting("UpdateLastSuccess", 0);
+        m_settings->registerSetting("UpdateFailingSince", 0);
+        m_settings->registerSetting("UpdateFailedChecks", 0);
 
         // Theming
         m_settings->registerSetting("IconTheme", QString("pe_colored"));
@@ -679,6 +692,8 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
 
         // Notifications
         m_settings->registerSetting("ShownNotifications", QString());
+        // questions with a "Don't ask again" (brought back by "Reset hidden notifications")
+        m_settings->registerSetting("ConfirmLogClear", true);
 
         // Remembered state
         m_settings->registerSetting("LastUsedGroupForNewInstance", QString());
@@ -863,6 +878,12 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
         config.statePath = QDir("updater").absoluteFilePath("state.json");
         config.system = SystemRequirements::detect();
         m_updaterV2.reset(new UpdaterV2::Checker(m_network, config));
+        auto setting = m_settings->getSetting("UpdateVariant");
+        m_updaterV2->setPreferredVariant(setting->get().toString());
+        connect(setting.get(), &Setting::SettingChanged, [&](const Setting &, QVariant value)
+        {
+            m_updaterV2->setPreferredVariant(value.toString());
+        });
         qDebug() << "<> Updater v2 started.";
     }
     else if(BuildConfig.UPDATER_ENABLED)

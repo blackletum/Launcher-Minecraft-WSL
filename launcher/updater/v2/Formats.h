@@ -73,6 +73,8 @@ struct LinkEntry
 struct Variant
 {
     QString id;
+    // shown to users
+    QString name;
     QStringList supersedes;
     SystemRequirements::Requirements requirements;
     QList<FileEntry> files;
@@ -85,6 +87,9 @@ struct BuildManifest
     QString commit;
     QDateTime built;
     QMap<QString, Variant> variants;
+    // variants this Launcher can't read (a newer format, a requirement described another way),
+    // with why: they never run here, but don't make the whole build unreadable
+    QMap<QString, QString> unreadable;
 };
 
 /**
