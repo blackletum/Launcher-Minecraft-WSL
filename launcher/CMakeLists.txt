@@ -95,6 +95,13 @@ add_unit_test(Colors
     LIBS Launcher_logic
     )
 
+if(UNIX AND NOT APPLE)
+    add_unit_test(DesktopIntegration
+        SOURCES DesktopIntegration_test.cpp
+        LIBS Launcher_logic
+        )
+endif()
+
 add_unit_test(Download
     SOURCES net/Download_test.cpp
     LIBS Launcher_logic
@@ -185,24 +192,11 @@ set(LAUNCH_SOURCES
     launch/LogModel.h
 )
 
-# Updater v1
+# The updater (Design/Updater.md in the MultiMC repository)
 set(UPDATE_SOURCES
-    updater/v1/UpdateController.h
-    updater/v1/UpdateController.cpp
-    updater/v1/GoUpdate.h
-    updater/v1/GoUpdate.cpp
-    updater/v1/UpdateChecker.h
-    updater/v1/UpdateChecker.cpp
-    updater/v1/DownloadTask.h
-    updater/v1/DownloadTask.cpp
-
-    # both updaters: waiting for the new build to start
+    # waiting for the new build to start
     updater/LiveCheck.h
     updater/LiveCheck.cpp
-)
-
-# Updater v2 (Design/Updater.md in the MultiMC repository): used only by builds made with Launcher_UPDATER_VERSION 2
-set(NEW_UPDATE_SOURCES
     updater/v2/Signature.h
     updater/v2/Signature.cpp
     updater/v2/SystemRequirements.h
@@ -230,18 +224,6 @@ set(NEW_UPDATE_SOURCES
 add_unit_test(UpdaterLiveCheck
     SOURCES updater/LiveCheck_test.cpp
     LIBS Launcher_logic
-    )
-
-add_unit_test(UpdaterV1UpdateChecker
-    SOURCES updater/v1/UpdateChecker_test.cpp
-    LIBS Launcher_logic
-    DATA updater/v1/testdata
-    )
-
-add_unit_test(UpdaterV1DownloadTask
-    SOURCES updater/v1/DownloadTask_test.cpp
-    LIBS Launcher_logic
-    DATA updater/v1/testdata
     )
 
 add_unit_test(UpdaterV2Signature
@@ -674,7 +656,6 @@ set(LOGIC_SOURCES
     ${NET_SOURCES}
     ${LAUNCH_SOURCES}
     ${UPDATE_SOURCES}
-    ${NEW_UPDATE_SOURCES}
     ${NOTIFICATIONS_SOURCES}
     ${NEWS_SOURCES}
     ${MINECRAFT_SOURCES}
@@ -968,6 +949,8 @@ SET(LAUNCHER_SOURCES
     ui/widgets/ThemeSelectionWidget.h
     ui/widgets/UpdateTierWidget.cpp
     ui/widgets/UpdateTierWidget.h
+    ui/widgets/ElidedLabel.cpp
+    ui/widgets/ElidedLabel.h
     ui/widgets/LineSeparator.cpp
     ui/widgets/LineSeparator.h
     ui/widgets/LogView.cpp
@@ -1013,6 +996,13 @@ else()
     # the desktop portal, over D-Bus
     find_package(Qt5DBus REQUIRED)
     list(APPEND LAUNCHER_SOURCES ui/themes/TitleBar_other.cpp ui/themes/SystemAppearance_linux.cpp)
+endif()
+
+# The Launcher's applications menu entry and icon (Linux); elsewhere nothing
+if(UNIX AND NOT APPLE)
+    list(APPEND LAUNCHER_SOURCES DesktopIntegration.h DesktopIntegration_linux.cpp)
+else()
+    list(APPEND LAUNCHER_SOURCES DesktopIntegration.h DesktopIntegration_other.cpp)
 endif()
 
 qt5_wrap_ui(LAUNCHER_UI

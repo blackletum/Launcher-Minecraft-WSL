@@ -46,22 +46,6 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_9">
        <item>
-        <widget class="QGroupBox" name="updateSettingsBox">
-         <property name="title">
-          <string>Update Settings</string>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_7">
-          <item>
-           <widget class="QCheckBox" name="autoUpdateCheckBox">
-            <property name="text">
-             <string>Check for updates on start?</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
         <widget class="QGroupBox" name="foldersBox">
          <property name="title">
           <string>Folders</string>
@@ -257,6 +241,39 @@
         </widget>
        </item>
        <item>
+        <widget class="QGroupBox" name="applicationsMenuBox">
+         <property name="title">
+          <string>Applications menu</string>
+         </property>
+         <layout class="QVBoxLayout" name="applicationsMenuBoxLayout">
+          <item>
+           <widget class="QCheckBox" name="applicationsMenuCheck">
+            <property name="text">
+             <string>Show MultiMC in the applications menu</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="applicationsMenuLabel">
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+            <property name="textInteractionFlags">
+             <set>Qt::TextSelectableByMouse</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="applicationsMenuUseThisBtn">
+            <property name="text">
+             <string>Use this copy</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
         <spacer name="generalTabSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -367,8 +384,8 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>autoUpdateCheckBox</tabstop>
   <tabstop>instDirTextBox</tabstop>
+
   <tabstop>instDirBrowseBtn</tabstop>
   <tabstop>instDirOpenBtn</tabstop>
   <tabstop>modsDirTextBox</tabstop>
@@ -384,6 +401,8 @@
   <tabstop>resetNotificationsBtn</tabstop>
   <tabstop>sortLastLaunchedBtn</tabstop>
   <tabstop>sortByNameBtn</tabstop>
+  <tabstop>applicationsMenuCheck</tabstop>
+  <tabstop>applicationsMenuUseThisBtn</tabstop>
   <tabstop>showConsoleCheck</tabstop>
   <tabstop>autoCloseConsoleCheck</tabstop>
   <tabstop>showConsoleErrorCheck</tabstop>

@@ -20,16 +20,14 @@
 #include <QMessageBox>
 #include <QDir>
 
-#include "updater/v1/UpdateChecker.h"
-
 #include "settings/SettingsObject.h"
 #include <FileSystem.h>
 #include "Application.h"
-#include "BuildConfig.h"
 
 #include <QApplication>
 #include <QProcess>
 #include <DesktopServices.h>
+#include "DesktopIntegration.h"
 
 // FIXME: possibly move elsewhere
 enum InstSortMode
@@ -49,12 +47,6 @@ LauncherPage::LauncherPage(QWidget *parent) : QWidget(parent), ui(new Ui::Launch
 
     m_languageModel = APPLICATION->translations();
     loadSettings();
-
-    // Updater; updater v2 has a page of its own (UpdatesPage)
-    if(!BuildConfig.UPDATER_ENABLED || BuildConfig.UPDATER_VERSION == 2)
-    {
-        ui->updateSettingsBox->setHidden(true);
-    }
 
     //move mac data button
     QFile file(QDir::current().absolutePath() + "/dontmovemacdata");
@@ -172,17 +164,15 @@ void LauncherPage::applySettings()
 {
     auto s = APPLICATION->settings();
 
+    s->set("ApplicationsMenuEntry", ui->applicationsMenuCheck->isChecked());
+    DesktopIntegration::update(APPLICATION->root(), ui->applicationsMenuCheck->isChecked());
+
     if (ui->resetNotificationsBtn->isChecked())
     {
         s->set("ShownNotifications", QString());
         s->set("ConfirmLogClear", true);
     }
 
-    // Updates (updater v2's are on UpdatesPage)
-    if(BuildConfig.UPDATER_VERSION != 2)
-    {
-        s->set("AutoUpdate", ui->autoUpdateCheckBox->isChecked());
-    }
     // Console settings
     s->set("ShowConsole", ui->showConsoleCheck->isChecked());
     s->set("AutoCloseConsole", ui->autoCloseConsoleCheck->isChecked());
@@ -212,9 +202,8 @@ void LauncherPage::applySettings()
 void LauncherPage::loadSettings()
 {
     auto s = APPLICATION->settings();
-    // Updates
-    ui->autoUpdateCheckBox->setChecked(s->get("AutoUpdate").toBool());
     // Console settings
+
     ui->showConsoleCheck->setChecked(s->get("ShowConsole").toBool());
     ui->autoCloseConsoleCheck->setChecked(s->get("AutoCloseConsole").toBool());
     ui->showConsoleErrorCheck->setChecked(s->get("ShowConsoleOnError").toBool());
@@ -237,4 +226,50 @@ void LauncherPage::loadSettings()
     {
         ui->sortByNameBtn->setChecked(true);
     }
+
+    ui->applicationsMenuCheck->setChecked(s->get("ApplicationsMenuEntry").toBool());
+    showApplicationsMenu();
+}
+
+void LauncherPage::showApplicationsMenu()
+{
+    const auto status = DesktopIntegration::status(APPLICATION->root());
+    ui->applicationsMenuBox->setVisible(status.state != DesktopIntegration::State::Unsupported);
+    bool usable = status.state == DesktopIntegration::State::Ours || status.state == DesktopIntegration::State::Other;
+    QString text;
+    switch (status.state)
+    {
+    case DesktopIntegration::State::Unsupported:
+        break;
+    case DesktopIntegration::State::Unavailable:
+        text = status.why;
+        break;
+    case DesktopIntegration::State::Packaged:
+        text = tr("MultiMC is installed as a package here: the package provides its applications menu entry.");
+        break;
+    case DesktopIntegration::State::Ours:
+        text = ui->applicationsMenuCheck->isChecked()
+            ? tr("The applications menu starts this copy of MultiMC.")
+            : tr("MultiMC is hidden from the applications menu. Its entry stays, to give MultiMC's windows their icon.");
+        break;
+    case DesktopIntegration::State::Other:
+        text = status.other.isEmpty()
+            ? tr("The applications menu has an entry for MultiMC that MultiMC didn't make. It is left as it is.")
+            : tr("The applications menu starts another copy of MultiMC, in %1.").arg(status.other);
+        break;
+    }
+    ui->applicationsMenuCheck->setEnabled(usable);
+    ui->applicationsMenuLabel->setText(text);
+    ui->applicationsMenuUseThisBtn->setVisible(usable && status.state == DesktopIntegration::State::Other);
+}
+
+void LauncherPage::on_applicationsMenuCheck_toggled(bool)
+{
+    showApplicationsMenu();
+}
+
+void LauncherPage::on_applicationsMenuUseThisBtn_clicked()
+{
+    DesktopIntegration::takeOver(APPLICATION->root(), ui->applicationsMenuCheck->isChecked());
+    showApplicationsMenu();
 }

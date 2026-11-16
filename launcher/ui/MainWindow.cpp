@@ -21,6 +21,8 @@
 
 #include "MainWindow.h"
 
+#include <QShortcut>
+#include <QSlider>
 #include <QtCore/QVariant>
 #include <QtCore/QUrl>
 #include <QtCore/QDir>
@@ -60,8 +62,6 @@
 #include <news/NewsChecker.h>
 #include <notifications/NotificationChecker.h>
 #include <tools/BaseProfiler.h>
-#include <updater/v1/DownloadTask.h>
-#include <updater/v1/UpdateChecker.h>
 #include <updater/v2/Checker.h>
 #include <updater/v2/CheckHistory.h>
 #include <updater/v2/DownloadTask.h>
@@ -75,6 +75,7 @@
 #include "ui/instanceview/InstanceProxyModel.h"
 #include "ui/instanceview/InstanceView.h"
 #include "ui/instanceview/InstanceDelegate.h"
+#include "ui/widgets/ElidedLabel.h"
 #include "ui/widgets/LabeledToolButton.h"
 #include "ui/dialogs/NewInstanceDialog.h"
 #include "ui/dialogs/ProgressDialog.h"
@@ -89,13 +90,18 @@
 #include "ui/dialogs/ExportInstanceDialog.h"
 #include "ui/dialogs/ModrinthExportDialog.h"
 
-#include "updater/v1/UpdateController.h"
 #include "KonamiCode.h"
 
 #include "InstanceImportTask.h"
 #include "InstanceCopyTask.h"
 
 #include "MMCTime.h"
+
+namespace {
+// The instance icons' sizes, as file managers step them (KDE's Dolphin): the zoom goes through
+// these. 48 was the only one before.
+const QVector<int> ICON_SIZES = {16, 22, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 256};
+}
 
 namespace {
 // a variant's name from the tier's build or the installed one; its ID when neither has it
@@ -787,6 +793,33 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new MainWindow
         connect(ui->actionCAT.operator->(), SIGNAL(toggled(bool)), SLOT(onCatToggled(bool)));
         setCatBackground(cat_enable);
     }
+    // the icons' size: a slider in the status bar, Ctrl and the wheel, Ctrl + and -
+    {
+        auto zoomLabel = new QLabel(tr("Zoom:"), this);
+        m_zoom = new QSlider(Qt::Horizontal, this);
+        m_zoom->setRange(0, ICON_SIZES.size() - 1);
+        m_zoom->setPageStep(1);
+        m_zoom->setFixedWidth(120);
+        m_zoom->setFocusPolicy(Qt::NoFocus);
+        // (put in the status bar with the rest of it, at its end)
+        m_zoomLabel = zoomLabel;
+        connect(m_zoom, &QSlider::valueChanged, this, &MainWindow::setIconSizeStep);
+        connect(view, &InstanceView::zoomRequested, this, [this](int steps) { m_zoom->setValue(m_zoom->value() + steps); });
+        auto zoomIn = new QShortcut(QKeySequence::ZoomIn, this);
+        connect(zoomIn, &QShortcut::activated, this, [this]() { m_zoom->setValue(m_zoom->value() + 1); });
+        auto zoomOut = new QShortcut(QKeySequence::ZoomOut, this);
+        connect(zoomOut, &QShortcut::activated, this, [this]() { m_zoom->setValue(m_zoom->value() - 1); });
+        // the saved size, or the nearest step to it
+        const int saved = APPLICATION->settings()->get("InstanceIconSize").toInt();
+        int step = 0;
+        for (int i = 0; i < ICON_SIZES.size(); i++)
+        {
+            if (qAbs(ICON_SIZES[i] - saved) < qAbs(ICON_SIZES[step] - saved))
+                step = i;
+        }
+        m_zoom->setValue(step);
+        setIconSizeStep(step);
+    }
     // start instance when double-clicked
     connect(view, &InstanceView::activated, this, &MainWindow::instanceActivated);
 
@@ -805,9 +838,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new MainWindow
     // When the global settings page closes, we want to know about it and update our state
     connect(APPLICATION, &Application::globalSettingsClosed, this, &MainWindow::globalSettingsClosed);
 
-    m_statusLeft = new QLabel(tr("No instance selected"), this);
+    m_statusLeft = new ElidedLabel(tr("No instance selected"), this);
     m_statusLeft->setObjectName(QStringLiteral("statusLeft"));
-    m_statusCenter = new QLabel(tr("Total playtime: 0s"), this);
+    m_statusCenter = new ElidedLabel(tr("Total playtime: 0s"), this);
     m_statusCenter->setObjectName(QStringLiteral("statusCenter"));
     statusBar()->addPermanentWidget(m_statusLeft, 1);
     statusBar()->addPermanentWidget(m_statusCenter, 0);
@@ -824,6 +857,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new MainWindow
     m_statusVersion->setObjectName(QStringLiteral("statusVersion"));
     m_statusVersion->setTextInteractionFlags(Qt::TextSelectableByMouse);
     statusBar()->addPermanentWidget(m_statusVersion, 0);
+    QFrame *zoomSeparator = new QFrame(this);
+    zoomSeparator->setFrameShape(QFrame::VLine);
+    zoomSeparator->setFrameShadow(QFrame::Sunken);
+    statusBar()->addPermanentWidget(zoomSeparator, 0);
+    statusBar()->addPermanentWidget(m_zoomLabel, 0);
+    statusBar()->addPermanentWidget(m_zoom, 0);
 
     // Add "manage accounts" button, right align
     QWidget *spacer = new QWidget();
@@ -881,18 +920,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new MainWindow
         // NOTE: calling the operator like that is an ugly hack to appease ancient gcc...
         connect(ui->actionCheckUpdate.operator->(), &QAction::triggered, this, &MainWindow::checkForUpdates);
 
-        if(BuildConfig.UPDATER_VERSION == 2)
-        {
-            auto updater = APPLICATION->updaterV2();
-            connect(updater.get(), &UpdaterV2::Checker::finished, this, &MainWindow::updateCheckedV2);
-        }
-        else
-        {
-            // set up the updater object.
-            auto updater = APPLICATION->updateChecker();
-            connect(updater.get(), &UpdaterV1::UpdateChecker::updateAvailable, this, &MainWindow::updateAvailable);
-            connect(updater.get(), &UpdaterV1::UpdateChecker::noUpdateFound, this, &MainWindow::updateNotAvailable);
-        }
+        auto updater = APPLICATION->updaterV2();
+        connect(updater.get(), &UpdaterV2::Checker::finished, this, &MainWindow::updateCheckedV2);
     }
 
     {
@@ -1261,6 +1290,14 @@ void MainWindow::defaultAccountChanged()
     }
 }
 
+void MainWindow::setIconSizeStep(int step)
+{
+    const int size = ICON_SIZES.value(qBound(0, step, ICON_SIZES.size() - 1), 48);
+    APPLICATION->settings()->set("InstanceIconSize", size);
+    view->setIconSize(QSize(size, size));
+    m_zoom->setToolTip(tr("Size: %1 pixels").arg(size));
+}
+
 bool MainWindow::eventFilter(QObject *obj, QEvent *ev)
 {
     if (obj == view)
@@ -1317,26 +1354,6 @@ void MainWindow::updateNewsLabel()
     }
 }
 
-void MainWindow::updateAvailable(UpdaterV1::Status status)
-{
-    if(!APPLICATION->updatesAreAllowed())
-    {
-        updateNotAvailable();
-        return;
-    }
-    UpdateDialog dlg(true, this);
-    UpdateAction action = (UpdateAction)dlg.exec();
-    switch (action)
-    {
-    case UPDATE_LATER:
-        qDebug() << "Update will be installed later.";
-        break;
-    case UPDATE_NOW:
-        downloadUpdates(status);
-        break;
-    }
-}
-
 void MainWindow::updateNotAvailable()
 {
     UpdateDialog dlg(false, this);
@@ -1379,40 +1396,6 @@ void MainWindow::notificationsChanged()
         }
     }
     APPLICATION->settings()->set("ShownNotifications", intListToString(shownNotifications));
-}
-
-void MainWindow::downloadUpdates(UpdaterV1::Status status)
-{
-    if(!APPLICATION->updatesAreAllowed())
-    {
-        return;
-    }
-    qDebug() << "Downloading updates.";
-    ProgressDialog updateDlg(this);
-    status.rootPath = APPLICATION->root();
-
-    auto dlPath = FS::PathCombine(APPLICATION->root(), "update", "XXXXXX");
-    if (!FS::ensureFilePathExists(dlPath))
-    {
-        CustomMessageBox::selectable(this, tr("Error"), tr("Couldn't create folder for update downloads:\n%1").arg(dlPath), QMessageBox::Warning)->show();
-    }
-    UpdaterV1::DownloadTask updateTask(APPLICATION->network(), status, dlPath, &updateDlg);
-    // If the task succeeds, install the updates.
-    if (updateDlg.execWithTask(&updateTask))
-    {
-        /**
-         * NOTE: This disables launching instances until the update either succeeds (and this process exits)
-         * or the update fails (and the control leaves this scope).
-         */
-        APPLICATION->updateIsRunning(true);
-        UpdaterV1::UpdateController update(this, APPLICATION->root(), updateTask.updateFilesDir(), updateTask.operations());
-        update.installUpdates();
-        APPLICATION->updateIsRunning(false);
-    }
-    else
-    {
-        CustomMessageBox::selectable(this, tr("Error"), updateTask.failReason(), QMessageBox::Warning)->show();
-    }
 }
 
 UpdaterV2::Tier MainWindow::updateTier()
@@ -1979,14 +1962,9 @@ void MainWindow::on_actionConfig_Folder_triggered()
 
 void MainWindow::checkForUpdates()
 {
-    if(BuildConfig.UPDATER_ENABLED && BuildConfig.UPDATER_VERSION == 2)
+    if(BuildConfig.UPDATER_ENABLED)
     {
         APPLICATION->updaterV2()->check(updateTier(), false, true);
-    }
-    else if(BuildConfig.UPDATER_ENABLED)
-    {
-        auto updater = APPLICATION->updateChecker();
-        updater->checkForUpdate(true);
     }
     else
     {
@@ -2320,15 +2298,9 @@ void MainWindow::autoCheckForUpdates()
     {
         return;
     }
-    if(BuildConfig.UPDATER_VERSION == 2)
-    {
-        APPLICATION->updaterV2()->check(updateTier(), false, false);
-    }
-    else
-    {
-        APPLICATION->updateChecker()->checkForUpdate(false);
-    }
+    APPLICATION->updaterV2()->check(updateTier(), false, false);
 }
+
 
 void MainWindow::checkInstancePathForProblems()
 {

@@ -24,7 +24,6 @@
 #include "BaseInstance.h"
 #include "minecraft/auth/MinecraftAccount.h"
 #include "net/NetJob.h"
-#include "updater/v1/GoUpdate.h"
 
 class LaunchController;
 namespace UpdaterV2 {
@@ -37,6 +36,7 @@ class QToolButton;
 class InstanceProxyModel;
 class LabeledToolButton;
 class QLabel;
+class QSlider;
 class MinecraftLauncher;
 class BaseProfilerFactory;
 class InstanceView;
@@ -172,8 +172,6 @@ private slots:
 
     void startTask(Task *task);
 
-    void updateAvailable(UpdaterV1::Status status);
-
     void updateNotAvailable();
 
     void notificationsChanged();
@@ -186,12 +184,8 @@ private slots:
 
     void updateNewsLabel();
 
-    /*!
-     * Runs the DownloadTask and installs updates.
-     */
-    void downloadUpdates(UpdaterV1::Status status);
-
     // updater v2: what a check found, and downloading and installing it
+
     void updateCheckedV2(const UpdaterV2::CheckResult &result);
     void downloadUpdateV2(const UpdaterV2::CheckResult &result);
 
@@ -205,6 +199,8 @@ private:
     void addInstance(QString url = QString());
     void activateInstance(InstancePtr instance);
     void setCatBackground(bool enabled);
+    /// The instance icons' size, one of ICON_SIZES by its place there; saved
+    void setIconSizeStep(int step);
     void updateInstanceToolIcon(QString new_icon);
     void setSelectedInstanceById(const QString &id);
     void updateStatusCenter();
@@ -228,6 +224,8 @@ private:
     QLabel *m_statusCenter = nullptr;
     // the version and platform, so they show in users' screenshots
     QLabel *m_statusVersion = nullptr;
+    QLabel *m_zoomLabel = nullptr;
+    QSlider *m_zoom = nullptr;
     QMenu *accountMenu = nullptr;
     QToolButton *accountMenuButton = nullptr;
     KonamiCode * secretEventFilter = nullptr;
