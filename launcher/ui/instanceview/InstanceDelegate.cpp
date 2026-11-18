@@ -24,8 +24,11 @@
 #include "InstanceView.h"
 #include "BaseInstance.h"
 #include "InstanceList.h"
+#include "icons/IconUtils.h"
 #include <xdgicon.h>
 #include <QTextEdit>
+#include <QResizeEvent>
+#include <QTextDocument>
 
 // Origin: Qt
 static void viewItemTextLayout(QTextLayout &textLayout, int lineWidth, qreal &height,
@@ -257,16 +260,14 @@ void ListViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
         mode = QIcon::Disabled;
     QIcon::State state = opt.state & QStyle::State_Open ? QIcon::On : QIcon::Off;
 
-    // the icon, as big as asked: QIcon only scales its images down, so a small one (most
-    // instance icons are 32 to 128 pixels) is scaled up here, smoothly
+    // the icon, fit to the square (IconUtils::fitted)
     {
         iconbox.setHeight(iconSize);
-        const QSize wanted(iconSize, iconSize);
-        QPixmap pixmap = opt.icon.pixmap(wanted, mode, state);
+        const qreal ratio = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
+        const QPixmap pixmap = IconUtils::fitted(opt.icon, QSize(iconSize, iconSize), ratio, mode, state);
         if (!pixmap.isNull())
         {
-            const QSize shown = (pixmap.size() / pixmap.devicePixelRatio()).scaled(wanted, Qt::KeepAspectRatio);
-            painter->setRenderHint(QPainter::SmoothPixmapTransform);
+            const QSize shown = pixmap.size() / pixmap.devicePixelRatio();
             painter->drawPixmap(QStyle::alignedRect(opt.direction, Qt::AlignCenter, shown, iconbox), pixmap);
         }
     }
@@ -328,6 +329,30 @@ public:
         setTextInteractionFlags(Qt::TextEditorInteraction);
         setHorizontalScrollBarPolicy(Qt::ScrollBarPolicy::ScrollBarAlwaysOff);
         setVerticalScrollBarPolicy(Qt::ScrollBarPolicy::ScrollBarAlwaysOff);
+        // the text where the name was, wrapped the same: no margin inside the field's frame
+        // (the delegate places it), and as tall as the text, so nothing scrolls out of sight
+        document()->setDocumentMargin(0);
+        connect(document(), &QTextDocument::contentsChanged, this, &NoReturnTextEdit::fitHeight);
+    }
+    /// At least as tall as the name it covers (its lines are a little tighter than the item's)
+    void setMinimumTextHeight(int height)
+    {
+        m_minimumTextHeight = height;
+        fitHeight();
+    }
+    /// As tall as its text at its width; it may reach past the item, over the ones below
+    void fitHeight()
+    {
+        document()->setTextWidth(viewport()->width());
+        const int height = qMax(qCeil(document()->size().height()), m_minimumTextHeight) + 2 * frameWidth();
+        if (height != this->height())
+            resize(width(), height);
+    }
+    void resizeEvent(QResizeEvent *event) override
+    {
+        QTextEdit::resizeEvent(event);
+        if (event->size().width() != event->oldSize().width())
+            fitHeight();
     }
     bool event(QEvent * event) override
     {
@@ -350,13 +375,28 @@ public:
     }
 signals:
     void editingDone();
+
+private: /* data */
+    int m_minimumTextHeight = 0;
 };
 
 void ListViewDelegate::updateEditorGeometry(QWidget* editor, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
-    QRect textRect = option.rect;
-    textRect.adjust(PADDING, TOP_PADDING + iconSizeOf(option) + ICON_TEXT_GAP, -PADDING, -PADDING);
-    editor->setGeometry(textRect);
+    // the field's text exactly where the name is drawn (paint()), its frame around that; its
+    // height follows the text (NoReturnTextEdit::fitHeight)
+    auto field = qobject_cast<NoReturnTextEdit *>(editor);
+    QStyle *style = option.widget ? option.widget->style() : QApplication::style();
+    const int textMargin = style->pixelMetric(QStyle::PM_FocusFrameHMargin, 0, option.widget) + 1;
+    const int frame = field ? field->frameWidth() : 0;
+    QRect textRect = option.rect.adjusted(textMargin + PADDING, TOP_PADDING + iconSizeOf(option) + ICON_TEXT_GAP, -textMargin - PADDING, 0);
+    editor->setGeometry(textRect.left() - frame, textRect.top() - frame, textRect.width() + 2 * frame, editor->height());
+    if (field)
+    {
+        // the name as drawn, so none of it shows below the field
+        QStyleOptionViewItem opt = option;
+        opt.text = index.data().toString();
+        field->setMinimumTextHeight(viewItemTextSize(&opt, option.rect.width() - 2 * PADDING).height());
+    }
 }
 
 void ListViewDelegate::setEditorData(QWidget* editor, const QModelIndex& index) const
@@ -384,6 +424,7 @@ void ListViewDelegate::setModelData(QWidget* editor, QAbstractItemModel* model, 
 QWidget * ListViewDelegate::createEditor(QWidget* parent, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
     auto editor = new NoReturnTextEdit(parent);
+    editor->setFont(option.font);
     connect(editor, &NoReturnTextEdit::editingDone, this, &ListViewDelegate::editingDone);
     return editor;
 }
