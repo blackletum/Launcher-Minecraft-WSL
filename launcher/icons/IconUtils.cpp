@@ -1,4 +1,7 @@
 #include "IconUtils.h"
+#include "CappedIconEngine.h"
+#include "FittedIconEngine.h"
+#include <QFileInfo>
 #include <QPixmapCache>
 #include <QPixmap>
 #include <QImage>
@@ -63,6 +66,23 @@ QString getIconFilter() {
 }
 
 
+QIcon fromFile(const QString &path)
+{
+    const QString suffix = QFileInfo(path).suffix().toLower();
+    if (suffix == "svg" || suffix == "svgz" || suffix == "ico")
+    {
+        QIcon icon(path);
+        return icon.availableSizes().isEmpty() && suffix == "ico" ? QIcon() : icon;
+    }
+    auto engine = new CappedIconEngine(path);
+    if (engine->null())
+    {
+        delete engine;
+        return QIcon();
+    }
+    return QIcon(engine);
+}
+
 // - what's in it, without its transparent margins (some modpacks' logos sit small in a wide
 //   image), fit to the box, its shape kept;
 // - from the biggest image the icon has (QIcon only scales its images down), or for one drawn
@@ -77,10 +97,11 @@ QPixmap fitted(const QIcon &icon, const QSize &box, qreal ratio, QIcon::Mode mod
     if (icon.isNull())
         return QPixmap();
     const QSize pixels = box * ratio;
-    const QString key = QString("fitted-icon:%1:%2x%3:%4:%5")
+    const QString key = QString("fitted-icon:%1:%2x%3@%4:%5:%6")
                             .arg(icon.cacheKey())
                             .arg(pixels.width())
                             .arg(pixels.height())
+                            .arg(ratio)
                             .arg(int(mode))
                             .arg(int(state));
     QPixmap out;
@@ -133,6 +154,13 @@ QPixmap fitted(const QIcon &icon, const QSize &box, qreal ratio, QIcon::Mode mod
     out.setDevicePixelRatio(ratio);
     QPixmapCache::insert(key, out);
     return out;
+}
+
+QIcon fittedIcon(const QIcon &icon)
+{
+    if (icon.isNull())
+        return icon;
+    return QIcon(new FittedIconEngine(icon));
 }
 }
 

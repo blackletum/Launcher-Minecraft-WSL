@@ -52,6 +52,7 @@
 #include <InstanceList.h>
 #include <MMCZip.h>
 #include <icons/IconList.h>
+#include <icons/IconUtils.h>
 #include <java/JavaUtils.h>
 #include <java/JavaInstallList.h>
 #include <launch/LaunchTask.h>
@@ -1856,17 +1857,19 @@ void MainWindow::on_actionChangeInstIcon_triggered()
     {
         m_selectedInstance->setIconKey(dlg.selectedIconKey);
         auto icon = APPLICATION->icons()->getIcon(dlg.selectedIconKey);
-        ui->actionChangeInstIcon->setIcon(icon);
+        ui->actionChangeInstIcon->setIcon(IconUtils::fittedIcon(icon));
         ui->changeIconButton->setIcon(icon);
     }
 }
 
 void MainWindow::iconUpdated(QString icon)
 {
+    // the instances showing it: the view paints icons from the icon list, which it doesn't watch
+    view->viewport()->update();
     if (icon == m_currentInstIcon)
     {
         auto icon = APPLICATION->icons()->getIcon(m_currentInstIcon);
-        ui->actionChangeInstIcon->setIcon(icon);
+        ui->actionChangeInstIcon->setIcon(IconUtils::fittedIcon(icon));
         ui->changeIconButton->setIcon(icon);
     }
 }
@@ -1875,7 +1878,7 @@ void MainWindow::updateInstanceToolIcon(QString new_icon)
 {
     m_currentInstIcon = new_icon;
     auto icon = APPLICATION->icons()->getIcon(m_currentInstIcon);
-    ui->actionChangeInstIcon->setIcon(icon);
+    ui->actionChangeInstIcon->setIcon(IconUtils::fittedIcon(icon));
     ui->changeIconButton->setIcon(icon);
 }
 
